@@ -42,4 +42,3 @@ Tests above do not query public indexes. `tests/test_tabs.py` also checks concur
 Search coverage depends on enabled sources, their availability and network conditions. The app searches and copies links; it is not a downloader. Only access and redistribute material you are entitled to use.
 
 GPL-3.0-or-later; see COPYING. PyQt5/Qt and mihomo have their own licensing requirements. Binary public packages include application source, mihomo v1.19.32 source and license texts. Do not upload private subscription configuration, personal ZIPs or runtime data.
-

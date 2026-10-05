@@ -1,0 +1,26 @@
+# Private subscriptions and runtime data
+data/
+**/data/
+**/settings.json
+**/user_nodes.json
+**/nodes.yaml
+**/config.yaml
+**/mihomo.log
+*.log
+*.pyc
+__pycache__/
+
+# Build tools, private packaging input, executable releases
+/build/*
+!/build/TSearchDS.spec
+!/build/build-public.ps1
+/dist/
+/release/
+/run/
+**/run/
+/docs/source-probes/
+/docs/*.png
+/docs/*report*.txt
+/docs/smoke*.txt
+
+/src/resources/mihomo.exe

@@ -1,0 +1,1 @@
+"""Embedded mihomo proxy support."""

@@ -1,0 +1,5 @@
+PyQt5>=5.15,<6
+requests>=2.31,<3
+PyYAML>=6,<7
+lxml>=5
+PyInstaller>=6,<7

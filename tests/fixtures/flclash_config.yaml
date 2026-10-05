@@ -1,0 +1,10 @@
+# Synthetic test data; no usable proxy credentials.
+tun:
+  enable: true
+proxies:
+  - name: Test node
+    type: ss
+    server: 192.0.2.1
+    port: 443
+    cipher: aes-128-gcm
+    password: example-test-password
