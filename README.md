@@ -48,3 +48,7 @@ GPL-3.0-or-later; see COPYING. PyQt5/Qt and mihomo have their own licensing requ
 ## Release and privacy policy
 
 Public releases contain source only. The proxy core is not automatically downloaded or installed; obtain it yourself from the official mihomo project. See NOTICE.md, THIRD_PARTY.md, PRIVACY.md and CONTRIBUTING.md. External search results do not confer copyright permission, and service access must follow applicable law and site terms.
+
+## Release review
+
+See [COMPLIANCE_REVIEW.md](COMPLIANCE_REVIEW.md) for the completed controls and remaining limits, and [HISTORICAL_DISTRIBUTION.md](HISTORICAL_DISTRIBUTION.md) for withdrawn-binary license/source directions. Current publication remains source-only.

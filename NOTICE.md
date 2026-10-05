@@ -1,5 +1,7 @@
 # TSearch-DS licensing notice
 
+Copyright (c) 2026 wdy0401 and contributors.
+
 Project source is offered under GPL-3.0-or-later; see COPYING (LICENSE in the development workspace).
 This program is free software: you may redistribute and modify it under version 3
 of the GNU General Public License, or, at your option, any later version.

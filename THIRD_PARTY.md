@@ -22,3 +22,7 @@ all obligations for a compiled bundle.
 
 Search sites, trackers, eD2k servers and Kad peers are external services, not
 project dependencies or affiliates. Their availability and terms are independent.
+
+Historical binary build notices, exact recipes, patches and source directions
+are preserved separately; see HISTORICAL_DISTRIBUTION.md. Keeping those materials
+does not mean that the withdrawn binary has been cleared for republication.
