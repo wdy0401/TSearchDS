@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
+# See COPYING / LICENSE and NOTICE.md.
 """Core data models for TSearch-DS."""
 from __future__ import annotations
 

@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
+# See COPYING / LICENSE and NOTICE.md.
 """Font selection.
 
 Qt's default font on a Chinese Windows install can render CJK glyphs as

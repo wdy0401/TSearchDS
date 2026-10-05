@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
+# See COPYING / LICENSE and NOTICE.md.
 """隐私回归：搜索关键词不许以任何形式离开程序 / 落到别处。
 
 跑法： python tests\\test_privacy.py

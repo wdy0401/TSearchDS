@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
+# See COPYING / LICENSE and NOTICE.md.
 """eD2k **server** ("hub") source -- the search path that still works today.
 
 The Kad network (`kad_source.py`) needs a reachable UDP node and is filtered

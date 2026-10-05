@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
+# See COPYING / LICENSE and NOTICE.md.
 """One search per tab.
 
 Everything a single query needs lives here: its own result model, its own

@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
+# See COPYING / LICENSE and NOTICE.md.
 """Subscription fetching and parsing.
 
 Accepts everything a user is likely to paste:
@@ -594,7 +596,7 @@ def fetch_subscription(url: str, timeout: float = 25.0, attempts: int = 3,
                 parsed["_source_url"] = url
                 return parsed
         log.info("subscription attempt %d/%d failed: %s", attempt + 1,
-                 attempts, url)
+                 attempts, "<订阅地址已隐去>")
         time.sleep(0.6 + random.random() * 0.8)
     return None
 

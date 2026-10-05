@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
+# See COPYING / LICENSE and NOTICE.md.
 """文件大小 / 文件类型 两列的回归测试（不需要联网）。
 
 跑法： python tests\\test_filetypes.py

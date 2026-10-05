@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
+# See COPYING / LICENSE and NOTICE.md.
 """Search source plugins."""
 from .base import REGISTRY, Source, register  # noqa: F401
 from . import torrents  # noqa: F401,E402

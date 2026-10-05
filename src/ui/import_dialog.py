@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
+# See COPYING / LICENSE and NOTICE.md.
 """Dialog for importing proxy content as text.
 
 Accepts whatever the user has: a full mihomo / Clash config exported from

@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
+# See COPYING / LICENSE and NOTICE.md.
 """Table model + sorting proxy for the results tables.
 
 Kept in its own module so both the window and the per-search tab can import it

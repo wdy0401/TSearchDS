@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
+# See COPYING / LICENSE and NOTICE.md.
 """Assert the embedded proxy is strictly local to this process.
 
 The requirement: using the proxy must affect *only* TSearch-DS.  It must never

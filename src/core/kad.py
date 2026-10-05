@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
+# See COPYING / LICENSE and NOTICE.md.
 """A minimal, from-scratch eD2k **Kad** client.
 
 Implements just enough of the Kad (Kademlia-over-UDP) protocol to run

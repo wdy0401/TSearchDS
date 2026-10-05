@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
+# See COPYING / LICENSE and NOTICE.md.
 """多标签 + 不保存搜索记录 的回归测试（需要联网，但不走代理）。
 
 跑法： python tests\\test_tabs.py

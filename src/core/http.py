@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
+# See COPYING / LICENSE and NOTICE.md.
 """Shared HTTP plumbing: sessions, proxy routing, retries, UA rotation.
 
 Everything that talks to the outside world goes through here so that the
@@ -59,8 +61,14 @@ def _redact(url: str) -> str:
     line is a record.  The host and path are kept, which is all a traceback of
     "this index failed" needs.
     """
-    head, sep, _tail = str(url or "").partition("?")
-    return head + "?<已隐去>" if sep else head
+    from urllib.parse import urlsplit
+    try:
+        parts = urlsplit(str(url or ""))
+        if parts.hostname:
+            return "%s://%s/<已隐去>" % (parts.scheme, parts.hostname)
+    except ValueError:
+        pass
+    return "<已隐去>"
 
 
 class _TimeoutAdapter(HTTPAdapter):
@@ -346,7 +354,7 @@ class Http:
                         return cr  # type: ignore[return-value]
 
         if last_err:
-            log.debug("GET %s failed: %s", _redact(url), last_err)
+            log.debug("GET %s failed: %s", _redact(url), type(last_err).__name__)
         return None
 
     def get_text(self, url: str, **kw) -> str:

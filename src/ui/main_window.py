@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
+# See COPYING / LICENSE and NOTICE.md.
 """The main window: keyword search over magnets / eD2k / thunder links.
 
 One search per tab -- a new tab is opened for every search, so a slow query
@@ -706,12 +708,14 @@ class MainWindow(QtWidgets.QMainWindow):
             self, "关于",
             "<h3>TSearch-DS</h3>"
             "<p>磁力 / eD2k(电驴) / 迅雷 链接聚合搜索器 &nbsp;<b>from ds</b></p>"
-            "<p>结果列 <b>名称 / 资源数 / 文件大小 / 文件类型 / 链接</b>；"
+            "<p>结果列 <b>名称 / 资源数 / 文件大小 / 文件类型 / 链接 / 来源</b>；"
             "表头可拖动换序、可调宽度；多选后按 Ctrl+C 复制（每行一个链接）。</p>"
             "<p>每次搜索新开一个标签，可以并行搜索。</p>"
-            "<p>不保存任何搜索记录：查询词不写入配置、不写入日志。</p>"
-            "<p>内置 mihomo 代理核心，启动时自动获取订阅、测速选优，"
+            "<p>不建立搜索历史；查询会发送至所选站点，网络服务可能记录请求。</p>"
+            "<p>可选 mihomo 代理核心由用户自行从官方项目获取，使用用户提供的订阅、测速选优，"
             "节点失效时自动切换到可用节点。</p>"
+            "<p>GPL-3.0-or-later，许可证见 COPYING。软件按现状提供，无担保，"
+            "以适用法律允许的范围为限。搜索结果不代表获得内容使用许可。</p>"
             "<p style='color:#8b949e'>%s</p>" % mode)
 
     def closeEvent(self, event) -> None:  # noqa: N802

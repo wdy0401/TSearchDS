@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
+# See COPYING / LICENSE and NOTICE.md.
 """Web-index sources for eD2k links.
 
 Reality check (verified 2026-10): the classic Chinese eD2k web indexes

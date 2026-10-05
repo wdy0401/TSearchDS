@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
+# See COPYING / LICENSE and NOTICE.md.
 """eD2k / Kad network source -- a headless replacement for TSearch.exe.
 
 Uses :mod:`src.core.kad` to talk to the live Kademlia network.  Keyword

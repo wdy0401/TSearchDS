@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
+# See COPYING / LICENSE and NOTICE.md.
 """Offline regressions for anonymous sources and access restrictions."""
 import pathlib
 import sys

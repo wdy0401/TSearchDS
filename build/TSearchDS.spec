@@ -4,8 +4,8 @@
 Builds a single-file windowed exe.  The mihomo core is deliberately *not*
 embedded: a 61 MB payload inside a onefile archive would make every launch pay
 a multi-second extraction cost.  Instead the exe looks for ``mihomo.exe``
-next to itself (shipped in ``dist/``) and falls back to downloading it into
-``%LOCALAPPDATA%\\TSearchDS`` on first run.
+next to itself or in its data directory. Public source users obtain the core
+separately from the official upstream; startup never downloads it.
 """
 import os
 import sys

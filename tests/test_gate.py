@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
+# See COPYING / LICENSE and NOTICE.md.
 """出口网闸的回归测试（不联网，几秒跑完）。
 
 跑法： python tests\\test_gate.py

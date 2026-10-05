@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
+# See COPYING / LICENSE and NOTICE.md.
 """Client for mihomo's External Controller REST API.
 
 Endpoints used (see https://wiki.metacubex.one/en/config/controller/):

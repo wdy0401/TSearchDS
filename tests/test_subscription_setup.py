@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
+# See COPYING / LICENSE and NOTICE.md.
 """Isolated offscreen tests for public first-run subscription setup."""
 import json
 import os

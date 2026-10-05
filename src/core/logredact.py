@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
+# See COPYING / LICENSE and NOTICE.md.
 """Keep search keywords out of the log files.
 
 The program promises not to keep a record of what was searched, and a log line

@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
+# See COPYING / LICENSE and NOTICE.md.
 """Anonymous public Internet Archive torrents, with metadata access checks."""
 import html
 from urllib.parse import quote

@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
+# See COPYING / LICENSE and NOTICE.md.
 """One gate for every outbound request, counted at the layer that matters.
 
 What this replaced

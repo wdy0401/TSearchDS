@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
+# See COPYING / LICENSE and NOTICE.md.
 """Search orchestration: fan out to every enabled source and stream results."""
 from __future__ import annotations
 

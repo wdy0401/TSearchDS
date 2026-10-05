@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
+# See COPYING / LICENSE and NOTICE.md.
 """Daemon-thread fan-out used by every network-bound part of the app.
 
 ``concurrent.futures.ThreadPoolExecutor`` spawns **non-daemon** workers and

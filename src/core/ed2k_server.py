@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
+# See COPYING / LICENSE and NOTICE.md.
 """eD2k **server** search ("hub" search) -- the path TSearch.exe used.
 
 `kad.py` talks to the Kademlia network, which is UDP and needs a reachable

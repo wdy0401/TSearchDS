@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
+# See COPYING / LICENSE and NOTICE.md.
 """Embedded mihomo core: binary discovery, config generation, process
 supervision and automatic node fail-over.
 
@@ -233,14 +235,8 @@ _ASSET = "mihomo-windows-amd64-compatible-%s.zip" % MIHOMO_VERSION
 _GH = "https://github.com/MetaCubeX/mihomo/releases/download/%s/%s" % (
     MIHOMO_VERSION, _ASSET)
 
-#: Mirrors first -- raw github is frequently throttled to a crawl in CN.
-DOWNLOAD_MIRRORS: Tuple[str, ...] = (
-    "https://ghfast.top/" + _GH,
-    "https://gh-proxy.com/" + _GH,
-    "https://ghproxy.net/" + _GH,
-    "https://ghp.ci/" + _GH,
-    _GH,
-)
+#: Explicit helper downloads use the official upstream only; startup never calls it.
+DOWNLOAD_MIRRORS: Tuple[str, ...] = (_GH,)
 
 
 def download_binary(dest_dir: Optional[str] = None, timeout: float = 300.0,
@@ -485,13 +481,8 @@ class MihomoCore:
         if path:
             self.binary = path
             return path
-        self._emit("info", "未找到 mihomo 内核，正在自动下载…")
-        path = download_binary(data_dir(), timeout=300.0,
-                               on_progress=lambda m: self._emit("info", m))
-        if path:
-            self.binary = path
-            self._emit("info", "mihomo 内核下载完成")
-            return path
+        self._emit("info", "未找到 mihomo 内核。请从 MetaCubeX/mihomo 官方项目获取，"
+                   "将 mihomo.exe 放在程序目录；也可使用直连搜索。")
         return None
 
     # -- config --------------------------------------------------------
@@ -963,7 +954,7 @@ class MihomoCore:
         binary = self.ensure_binary()
         if not binary:
             self.last_error = ("未找到 mihomo 可执行文件。请将 mihomo.exe 放在程序同目录，"
-                               "或保持联网让程序自动下载。")
+                               "请自行从 https://github.com/MetaCubeX/mihomo 获取。")
             self._emit("error", self.last_error)
             return False
         if not self.proxies:

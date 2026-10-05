@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
+# See COPYING / LICENSE and NOTICE.md.
 """Tiny namespace-agnostic RSS/Atom reader built on the stdlib.
 
 The feeds we consume are frequently malformed (bare ``&``, stray control

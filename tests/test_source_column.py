@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
+# See COPYING / LICENSE and NOTICE.md.
 """Source column regressions: merged origins, streaming updates, old layouts."""
 import os
 import pathlib

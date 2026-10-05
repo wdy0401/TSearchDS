@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
+# See COPYING / LICENSE and NOTICE.md.
 """Seeder ("资源数") enrichment.
 
 Sources that only hand out a magnet or a ``.torrent`` link cannot report how

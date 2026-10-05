@@ -11,7 +11,7 @@ Source-only distribution: this repository and its releases do not provide precom
 - Public index adapters including API Bay, Nyaa, DMHY, RuTor and Internet Archive. Searches do not require an index account.
 - eD2k server/Kad adapters and background tracker enrichment.
 - Optional local mihomo proxy; users supply their own subscription or import nodes. No default subscription is embedded.
-- Multiselect copying, sorting, filtering and movable/resizable columns. No persistent search history.
+- Multiselect copying, sorting, filtering and movable/resizable columns. No saved search-history database; see PRIVACY.md for network and diagnostic traces.
 
 ## Run and build
 
@@ -45,3 +45,6 @@ Search coverage depends on enabled sources, their availability and network condi
 
 GPL-3.0-or-later; see COPYING. PyQt5/Qt and mihomo have their own licensing requirements. If you build and redistribute binaries yourself, you must separately satisfy the licenses of all bundled components. Do not upload private subscription configuration, personal ZIPs or runtime data.
 
+## Release and privacy policy
+
+Public releases contain source only. The proxy core is not automatically downloaded or installed; obtain it yourself from the official mihomo project. See NOTICE.md, THIRD_PARTY.md, PRIVACY.md and CONTRIBUTING.md. External search results do not confer copyright permission, and service access must follow applicable law and site terms.
