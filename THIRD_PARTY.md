@@ -1,28 +1,39 @@
-# Third-party dependencies
+# Dependency licensing — current Tkinter edition
 
-This source repository imports dependencies; it does not vendor their implementations.
-The table is a guide to upstream licensing, not a binary distribution license inventory.
-Check the exact versions you install and preserve their notices when redistributing them.
+The default interface is tkinter/ttk (Python standard library). The default
+build excludes all PyQt/PySide/Qt modules. The optional Qt source backend is
+for development and requires requirements-qt.txt; its LGPL/GPL obligations
+apply if anyone distributes it. No dependency implementations are vendored
+in the public source archive.
 
-| Component | Upstream license / source |
+| Component | License / authoritative source |
 | --- | --- |
-| Python | PSF license and bundled notices: https://docs.python.org/3/license.html |
-| PyQt5 | GPLv3 or commercial; not LGPL: https://www.riverbankcomputing.com/software/pyqt/ |
-| Qt | Module/version-dependent GPL, LGPL or commercial: https://www.qt.io/development/open-source-lgpl-obligations |
+| Python / tkinter | PSF and incorporated notices: https://docs.python.org/3/license.html |
+| Tcl/Tk | Permissive Tcl/Tk terms: https://github.com/tcltk/tk/blob/core-8-6-branch/license.terms |
 | Requests | Apache-2.0: https://github.com/psf/requests |
-| PyYAML | MIT: https://github.com/yaml/pyyaml |
-| lxml | BSD, with additional notices for libxml2/libxslt: https://github.com/lxml/lxml/blob/master/LICENSES.txt |
-| PyInstaller (build tool) | GPL-2.0-or-later with bootloader exception, plus file-specific licenses: https://github.com/pyinstaller/pyinstaller/blob/develop/COPYING.txt |
-| mihomo (optional separate executable) | GPLv3: https://github.com/MetaCubeX/mihomo/blob/Meta/LICENSE |
+| urllib3 / charset-normalizer / PyYAML | MIT; preserve upstream notices |
+| idna | BSD-3-Clause; preserve upstream notices |
+| certifi | MPL-2.0: https://github.com/certifi/python-certifi ; provide source of distributed covered files, including modifications |
+| lxml / libxml2 / libxslt | Preserve package and bundled-library notices: https://github.com/lxml/lxml/blob/master/LICENSES.txt |
+| PyInstaller | GPL with bootloader exception and file-specific notices: https://github.com/pyinstaller/pyinstaller/blob/develop/COPYING.txt |
+| mihomo (separate optional executable) | GPLv3: https://github.com/MetaCubeX/mihomo/blob/Meta/LICENSE |
+| PySide6/Qt (optional, excluded from default binary) | Module-dependent LGPL/GPL/commercial: https://www.qt.io/development/open-source-lgpl-obligations |
 
-Requests' transitive dependencies and any DLLs collected by a local build need
-their own review. Neither this table nor the application's GPL notice relicenses
-third-party software. GPL-compatible application source does not by itself satisfy
-all obligations for a compiled bundle.
+## Distribution
 
-Search sites, trackers, eD2k servers and Kad peers are external services, not
-project dependencies or affiliates. Their availability and terms are independent.
+Public publication remains application source only; no EXE, DLL, mihomo or
+private proxy configuration is included. Application code retains its existing
+GPL-3.0-or-later license. Switching frameworks does not revoke earlier grants.
 
-Historical binary build notices, exact recipes, patches and source directions
-are preserved separately; see HISTORICAL_DISTRIBUTION.md. Keeping those materials
-does not mean that the withdrawn binary has been cleared for republication.
+For a future binary release inventory the actual files and exact versions,
+preserve their complete license/copyright notices, supply this application's
+corresponding source and build instructions under GPL, and satisfy MPL and
+other covered-component source requirements. If mihomo is distributed, provide
+its matching corresponding source and build materials; a generic upstream link
+alone is not a substitute. System fonts are used by family name, never bundled.
+
+Removing PyQt removes that dependency's obligations from new Tk-only builds;
+it does not resolve historical binary distributions retroactively. Preserve
+HISTORICAL_DISTRIBUTION.md and its evidence. Search-service terms, copyright
+of retrieved content, privacy, and local proxy regulations remain separate
+from GUI licensing. No zero-risk or legal-compliance certification is claimed.

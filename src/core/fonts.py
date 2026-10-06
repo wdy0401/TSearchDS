@@ -8,7 +8,7 @@ CJK-capable family and fall back gracefully.
 """
 from __future__ import annotations
 
-from PyQt5 import QtGui, QtWidgets
+from PySide6 import QtGui, QtWidgets
 
 CANDIDATES = (
     "Microsoft YaHei UI",
@@ -33,7 +33,7 @@ def apply_default_font(app: QtWidgets.QApplication, size: int = 10) -> str:
             chosen = name
             break
     font = QtGui.QFont(chosen or app.font().family(), size)
-    font.setStyleStrategy(QtGui.QFont.PreferAntialias)
+    font.setStyleStrategy(QtGui.QFont.StyleStrategy.PreferAntialias)
     app.setFont(font)
 
     mono = ""
@@ -54,5 +54,5 @@ def monospace_font(size: int = 9) -> QtGui.QFont:
         if name in families:
             return QtGui.QFont(name, size)
     f = QtGui.QFont("Courier New", size)
-    f.setStyleHint(QtGui.QFont.Monospace)
+    f.setStyleHint(QtGui.QFont.StyleHint.Monospace)
     return f

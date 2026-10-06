@@ -11,6 +11,9 @@ Nothing about what the user searched is written to disk: no query is stored in
 """
 from __future__ import annotations
 
+from .i18n import tr
+from . import i18n
+
 import json
 import logging
 import os
@@ -19,7 +22,7 @@ import time
 from urllib.parse import urlsplit
 from typing import Dict, List, Optional
 
-from PyQt5 import QtCore, QtGui, QtWidgets
+from PySide6 import QtCore, QtGui, QtWidgets
 
 from ..core.models import SearchResult
 from ..core.proxy.core import MihomoCore, data_dir, data_dir_label
@@ -37,7 +40,7 @@ _FORBIDDEN_SETTINGS = ("last_query", "query", "history", "recent", "search")
 class MainWindow(QtWidgets.QMainWindow):
 
     #: marshals proxy events from worker threads onto the GUI thread
-    sig_proxy = QtCore.pyqtSignal(str, str)
+    sig_proxy = QtCore.Signal(str, str)
 
     def __init__(self, start_proxy: bool = True) -> None:
         super().__init__()
@@ -47,6 +50,8 @@ class MainWindow(QtWidgets.QMainWindow):
 
         self.settings_path = os.path.join(data_dir(), "settings.json")
         self.settings = self._load_settings()
+        i18n.set_language(self.settings.get('language', i18n.DEFAULT_LANGUAGE))
+        self.setWindowTitle(tr(APP_TITLE))
 
         self.core: Optional[MihomoCore] = None
         self._pending_query = ""
@@ -126,22 +131,22 @@ class MainWindow(QtWidgets.QMainWindow):
         top = QtWidgets.QHBoxLayout()
         self.edit = QtWidgets.QLineEdit()
         self.edit.setPlaceholderText(
-            "输入关键词（支持模糊匹配，例如：火影 1080p / ubuntu / naruto）")
+            tr("输入关键词（支持模糊匹配，例如：火影 1080p / ubuntu / naruto）"))
         self.edit.setClearButtonEnabled(True)
         self.edit.returnPressed.connect(self.start_search)
         f = self.edit.font()
         f.setPointSize(f.pointSize() + 2)
         self.edit.setFont(f)
 
-        self.btn_search = QtWidgets.QPushButton("搜索（新标签）")
+        self.btn_search = QtWidgets.QPushButton(tr("搜索（新标签）"))
         self.btn_search.setDefault(True)
         self.btn_search.setMinimumWidth(110)
         self.btn_search.setToolTip(
-            "每次搜索都会新开一个标签，可以在上一个还没出结果时接着搜下一个 (Ctrl+Enter)")
-        self.btn_stop = QtWidgets.QPushButton("停止当前")
+            tr("每次搜索都会新开一个标签，可以在上一个还没出结果时接着搜下一个 (Ctrl+Enter)"))
+        self.btn_stop = QtWidgets.QPushButton(tr("停止当前"))
         self.btn_stop.setEnabled(False)
         self.btn_stop.setMinimumWidth(80)
-        self.btn_stop.setToolTip("只停止当前标签的搜索；关闭标签也会停止它")
+        self.btn_stop.setToolTip(tr("只停止当前标签的搜索；关闭标签也会停止它"))
 
         top.addWidget(self.edit, 1)
         top.addWidget(self.btn_search)
@@ -154,29 +159,29 @@ class MainWindow(QtWidgets.QMainWindow):
 
         self.cmb_format = QtWidgets.QComboBox()
         for label, key in LINK_FORMATS:
-            self.cmb_format.addItem(label, key)
+            self.cmb_format.addItem(tr(label), key)
         idx = self.cmb_format.findData(self.settings.get("link_format", "auto"))
         self.cmb_format.setCurrentIndex(max(0, idx))
-        self.cmb_format.setToolTip("表格中链接的显示格式；复制时也使用该格式（所有标签）")
-        bar.addWidget(QtWidgets.QLabel("链接格式:"))
+        self.cmb_format.setToolTip(tr("表格中链接的显示格式；复制时也使用该格式（所有标签）"))
+        bar.addWidget(QtWidgets.QLabel(tr("链接格式:")))
         bar.addWidget(self.cmb_format)
 
         bar.addSpacing(10)
-        self.btn_copy = QtWidgets.QPushButton("复制选中链接")
-        self.btn_copy.setToolTip("每行一个链接 (Ctrl+C)")
-        self.btn_copy_all = QtWidgets.QPushButton("复制全部结果")
-        self.btn_select_all = QtWidgets.QPushButton("全选")
-        self.btn_invert = QtWidgets.QPushButton("反选")
+        self.btn_copy = QtWidgets.QPushButton(tr("复制选中链接"))
+        self.btn_copy.setToolTip(tr("每行一个链接 (Ctrl+C)"))
+        self.btn_copy_all = QtWidgets.QPushButton(tr("复制全部结果"))
+        self.btn_select_all = QtWidgets.QPushButton(tr("全选"))
+        self.btn_invert = QtWidgets.QPushButton(tr("反选"))
         for b in (self.btn_copy, self.btn_copy_all, self.btn_select_all,
                   self.btn_invert):
             bar.addWidget(b)
 
         bar.addStretch(1)
-        self.btn_new_tab = QtWidgets.QPushButton("新建标签")
-        self.btn_sources = QtWidgets.QPushButton("数据源")
-        self.btn_import = QtWidgets.QPushButton("导入代理内容")
-        self.btn_import.setToolTip("粘贴 Clash/mihomo 配置或节点链接，作为代理来源")
-        self.btn_speedtest = QtWidgets.QPushButton("节点测速")
+        self.btn_new_tab = QtWidgets.QPushButton(tr("新建标签"))
+        self.btn_sources = QtWidgets.QPushButton(tr("数据源"))
+        self.btn_import = QtWidgets.QPushButton(tr("导入代理内容"))
+        self.btn_import.setToolTip(tr("粘贴 Clash/mihomo 配置或节点链接，作为代理来源"))
+        self.btn_speedtest = QtWidgets.QPushButton(tr("节点测速"))
         for b in (self.btn_new_tab, self.btn_sources, self.btn_import,
                   self.btn_speedtest):
             bar.addWidget(b)
@@ -187,99 +192,145 @@ class MainWindow(QtWidgets.QMainWindow):
         self.tabs.setTabsClosable(True)
         self.tabs.setMovable(True)
         self.tabs.setDocumentMode(True)
-        self.tabs.setElideMode(QtCore.Qt.ElideRight)
+        self.tabs.setElideMode(QtCore.Qt.TextElideMode.ElideRight)
         root.addWidget(self.tabs, 1)
 
         # ---- status bar (shared by all tabs)
         sb = self.statusBar()
-        self.lbl_status = QtWidgets.QLabel("就绪")
-        self.lbl_proxy = QtWidgets.QLabel("代理: 未启动")
+        self.lbl_status = QtWidgets.QLabel(tr("就绪"))
+        self.lbl_proxy = QtWidgets.QLabel(tr("代理: 未启动"))
         self.lbl_proxy.setMinimumWidth(320)
         sb.addWidget(self.lbl_status, 1)
         sb.addPermanentWidget(self.lbl_proxy)
 
     def _build_menu(self) -> None:
         mb = self.menuBar()
-        m_file = mb.addMenu("文件(&F)")
-        act_new = m_file.addAction("新建搜索标签")
+        mb.clear()
+        m_file = mb.addMenu(tr("文件(&F)"))
+        act_new = m_file.addAction(tr("新建搜索标签"))
         act_new.setShortcut("Ctrl+T")
         act_new.triggered.connect(lambda: self.new_tab(focus=True))
-        act_close = m_file.addAction("关闭当前标签")
+        act_close = m_file.addAction(tr("关闭当前标签"))
         act_close.setShortcut("Ctrl+W")
         act_close.triggered.connect(lambda: self.close_tab(self.tabs.currentIndex()))
         m_file.addSeparator()
-        act_dir = m_file.addAction("打开数据目录")
+        act_dir = m_file.addAction(tr("打开数据目录"))
         act_dir.triggered.connect(self._open_data_dir)
-        act_log = m_file.addAction("查看 mihomo 日志")
+        act_log = m_file.addAction(tr("查看 mihomo 日志"))
         act_log.triggered.connect(self._open_mihomo_log)
         m_file.addSeparator()
-        act_quit = m_file.addAction("退出")
+        act_quit = m_file.addAction(tr("退出"))
         act_quit.triggered.connect(self.close)
 
-        m_search = mb.addMenu("搜索(&S)")
-        act_focus = m_search.addAction("聚焦搜索框")
+        m_search = mb.addMenu(tr("搜索(&S)"))
+        act_focus = m_search.addAction(tr("聚焦搜索框"))
         act_focus.setShortcut("Ctrl+L")
         act_focus.triggered.connect(lambda: (self.edit.setFocus(),
                                             self.edit.selectAll()))
-        act_copy = m_search.addAction("复制选中链接")
+        act_copy = m_search.addAction(tr("复制选中链接"))
         act_copy.setShortcut("Ctrl+C")
         act_copy.triggered.connect(self.copy_selected)
-        act_copy_all = m_search.addAction("复制全部")
+        act_copy_all = m_search.addAction(tr("复制全部"))
         act_copy_all.setShortcut("Ctrl+Shift+C")
         act_copy_all.triggered.connect(self.copy_all)
 
-        m_link = mb.addMenu("链接(&L)")
+        m_link = mb.addMenu(tr("链接(&L)"))
         for label, key in LINK_FORMATS:
-            a = m_link.addAction(label)
+            a = m_link.addAction(tr(label))
             a.triggered.connect(lambda _c, k=key: self._set_format(k))
 
-        m_view = mb.addMenu("视图(&V)")
-        a_reset = m_view.addAction("重置当前标签的列布局")
+        m_view = mb.addMenu(tr("视图(&V)"))
+        a_reset = m_view.addAction(tr("重置当前标签的列布局"))
         a_reset.triggered.connect(self._reset_columns)
-        a_fit = m_view.addAction("按窗口宽度分配列宽")
+        a_fit = m_view.addAction(tr("按窗口宽度分配列宽"))
         a_fit.triggered.connect(self._fit_columns)
 
-        self.m_sources = mb.addMenu("数据源(&D)")
-        self.m_proxy = mb.addMenu("代理(&P)")
+        self.m_sources = mb.addMenu(tr("数据源(&D)"))
+        self.m_proxy = mb.addMenu(tr("代理(&P)"))
 
-        m_help = mb.addMenu("帮助(&H)")
-        a_about = m_help.addAction("关于")
+        m_help = mb.addMenu(tr("帮助(&H)"))
+        a_about = m_help.addAction(tr("关于"))
         a_about.triggered.connect(self._about)
+
+        language_menu = mb.addMenu('语言 / Language')
+        self.language_actions = {}
+        group = QtGui.QActionGroup(language_menu)
+        group.setExclusive(True)
+        for code, label in (('zh_CN', '中文'), ('en', 'English')):
+            action = language_menu.addAction(label)
+            action.setCheckable(True)
+            action.setChecked(i18n.language() == code)
+            group.addAction(action)
+            action.triggered.connect(lambda checked, value=code: self._set_language(value))
+            self.language_actions[code] = action
+
+    def _set_language(self, value: str) -> None:
+        old = i18n.language()
+        i18n.set_language(value)
+        # Record the choice even when it is unchanged: picking the default
+        # explicitly must still persist it for the next start.
+        self.settings['language'] = i18n.language()
+        if old == i18n.language():
+            self._save_settings()
+            return
+        self.setWindowTitle(tr(APP_TITLE))
+        # Keep the existing tabs, workers, result rows and selections intact.
+        for widget in self.findChildren(QtWidgets.QWidget):
+            if isinstance(widget, (QtWidgets.QLabel, QtWidgets.QAbstractButton)):
+                widget.setText(i18n.retranslate(widget.text(), old))
+            if isinstance(widget, (QtWidgets.QLineEdit, QtWidgets.QTextEdit, QtWidgets.QPlainTextEdit)):
+                widget.setPlaceholderText(i18n.retranslate(widget.placeholderText(), old))
+            widget.setToolTip(i18n.retranslate(widget.toolTip(), old))
+        self.cmb_format.blockSignals(True)
+        for index, (label, key) in enumerate(LINK_FORMATS):
+            self.cmb_format.setItemText(index, tr(label))
+        self.cmb_format.blockSignals(False)
+        self._build_menu()
+        self._populate_sources_menu()
+        for index in range(self.tabs.count()):
+            tab = self.tabs.widget(index)
+            self.tabs.setTabText(index, i18n.retranslate(self.tabs.tabText(index), old))
+            if isinstance(tab, SearchTab):
+                tab.model.headerDataChanged.emit(QtCore.Qt.Orientation.Horizontal, 0, len(ResultModel.HEADERS)-1)
+                if tab.model.rowCount():
+                    tab.model.dataChanged.emit(tab.model.index(0, 0), tab.model.index(tab.model.rowCount()-1, 5))
+                tab.show_details()
+        self._save_settings()
 
     def _populate_sources_menu(self) -> None:
         self.m_sources.clear()
         for s in REGISTRY.all():
-            act = QtWidgets.QAction("%s  (%s)" % (s.label, ", ".join(s.kinds)),
-                                    self.m_sources, checkable=True)
+            act = QtGui.QAction("%s  (%s)" % (tr(s.label), ", ".join(s.kinds)),
+                                self.m_sources, checkable=True)
             act.setChecked(s.enabled)
             act.toggled.connect(lambda on, src=s: self._toggle_source(src, on))
             self.m_sources.addAction(act)
         self.m_sources.addSeparator()
-        act_all = self.m_sources.addAction("全部启用")
+        act_all = self.m_sources.addAction(tr("全部启用"))
         act_all.triggered.connect(lambda: self._set_all_sources(True))
-        act_none = self.m_sources.addAction("全部禁用")
+        act_none = self.m_sources.addAction(tr("全部禁用"))
         act_none.triggered.connect(lambda: self._set_all_sources(False))
 
         self.m_proxy.clear()
-        a_start = self.m_proxy.addAction("启动代理")
+        a_start = self.m_proxy.addAction(tr("启动代理"))
         a_start.triggered.connect(self._start_proxy)
-        a_stop = self.m_proxy.addAction("停止代理")
+        a_stop = self.m_proxy.addAction(tr("停止代理"))
         a_stop.triggered.connect(self._stop_proxy)
-        a_test = self.m_proxy.addAction("节点测速并切换最快")
+        a_test = self.m_proxy.addAction(tr("节点测速并切换最快"))
         a_test.triggered.connect(self._speedtest)
-        a_refresh = self.m_proxy.addAction("重新获取订阅")
+        a_refresh = self.m_proxy.addAction(tr("重新获取订阅"))
         a_refresh.triggered.connect(self._refresh_subscription)
-        a_subscription = self.m_proxy.addAction("设置订阅地址…")
+        a_subscription = self.m_proxy.addAction(tr("设置订阅地址…"))
         a_subscription.triggered.connect(self._configure_subscription)
         self.m_proxy.addSeparator()
-        a_import = self.m_proxy.addAction("导入代理内容（粘贴文本）…")
+        a_import = self.m_proxy.addAction(tr("导入代理内容（粘贴文本）…"))
         a_import.triggered.connect(self._import_proxy_text)
-        a_import_file = self.m_proxy.addAction("导入配置文件…")
+        a_import_file = self.m_proxy.addAction(tr("导入配置文件…"))
         a_import_file.triggered.connect(self._import_proxy_file)
-        a_clear = self.m_proxy.addAction("清空已导入的节点")
+        a_clear = self.m_proxy.addAction(tr("清空已导入的节点"))
         a_clear.triggered.connect(self._clear_imported)
         self.m_proxy.addSeparator()
-        a_dir = self.m_proxy.addAction("打开数据目录")
+        a_dir = self.m_proxy.addAction(tr("打开数据目录"))
         a_dir.triggered.connect(self._open_data_dir)
 
     def _wire_signals(self) -> None:
@@ -298,7 +349,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.cmb_format.currentIndexChanged.connect(
             lambda i: self._set_format(self.cmb_format.itemData(i)))
         # Ctrl+Enter searches without leaving the search box
-        QtWidgets.QShortcut(QtGui.QKeySequence("Ctrl+Return"), self,
+        QtGui.QShortcut(QtGui.QKeySequence("Ctrl+Return"), self,
                             activated=self.start_search)
 
     # -- tabs ----------------------------------------------------------
@@ -310,7 +361,7 @@ class MainWindow(QtWidgets.QMainWindow):
             tab.apply_layout(ref.layout_state())
         else:
             tab.apply_layout(self.settings)
-        i = self.tabs.addTab(tab, tab.query or "(空)")
+        i = self.tabs.addTab(tab, tab.query or tr("(空)"))
         if focus:
             self.tabs.setCurrentIndex(i)
             self.edit.setFocus()
@@ -394,7 +445,7 @@ class MainWindow(QtWidgets.QMainWindow):
         if self.core is None or self.core.running:
             QtCore.QTimer.singleShot(150, self._run_pending_search)
             return
-        self.lbl_status.setText("等待代理就绪后自动搜索…")
+        self.lbl_status.setText(tr("等待代理就绪后自动搜索…"))
         QtCore.QTimer.singleShot(1000, self._pending_tick)
 
     def _pending_tick(self) -> None:
@@ -404,7 +455,7 @@ class MainWindow(QtWidgets.QMainWindow):
             self._run_pending_search()
             return
         if time.monotonic() >= getattr(self, "_pending_deadline", 0):
-            self.lbl_status.setText("代理未就绪，仍以直连方式搜索")
+            self.lbl_status.setText(tr("代理未就绪，仍以直连方式搜索"))
             self._run_pending_search()
             return
         QtCore.QTimer.singleShot(1000, self._pending_tick)
@@ -420,13 +471,13 @@ class MainWindow(QtWidgets.QMainWindow):
         """Every search gets its own tab, so searches run in parallel."""
         query = self.edit.text().strip()
         if not query:
-            self.lbl_status.setText("请输入关键词")
+            self.lbl_status.setText(tr("请输入关键词"))
             return
 
         sources = REGISTRY.enabled()
         if not sources:
             QtWidgets.QMessageBox.information(
-                self, "没有数据源", "请在「数据源」菜单中至少启用一个数据源。")
+                self, tr("没有数据源"), tr("请在「数据源」菜单中至少启用一个数据源。"))
             return
 
         tab = self.current_tab()
@@ -464,23 +515,23 @@ class MainWindow(QtWidgets.QMainWindow):
 
     def _to_clipboard(self, text: str, what: str) -> None:
         if not text:
-            self.lbl_status.setText("没有可复制的内容")
+            self.lbl_status.setText(tr("没有可复制的内容"))
             return
         QtWidgets.QApplication.clipboard().setText(text)
         n = len([x for x in text.split("\r\n") if x])
-        self.lbl_status.setText("已复制 %d 条%s链接到剪贴板" % (n, what))
+        self.lbl_status.setText(tr("已复制 %d 条%s链接到剪贴板") % (n, what))
 
     def copy_selected(self) -> None:
         tab = self.current_tab()
         if tab is None:
             return
-        self._to_clipboard(tab.links_for(tab.selected_results()), "选中")
+        self._to_clipboard(tab.links_for(tab.selected_results()), tr("选中"))
 
     def copy_all(self) -> None:
         tab = self.current_tab()
         if tab is None:
             return
-        self._to_clipboard(tab.links_for(tab.results()), "全部")
+        self._to_clipboard(tab.links_for(tab.results()), tr("全部"))
 
     def _select_all(self) -> None:
         tab = self.current_tab()
@@ -503,7 +554,7 @@ class MainWindow(QtWidgets.QMainWindow):
             return
         rows = [r for r in tab.selected_results() if r.kind == "magnet"]
         if not rows:
-            self.lbl_status.setText("选中结果中没有磁力链接")
+            self.lbl_status.setText(tr("选中结果中没有磁力链接"))
             return
         tab.reenrich(rows)
 
@@ -517,8 +568,8 @@ class MainWindow(QtWidgets.QMainWindow):
         i = self.cmb_format.findData(key)
         if i >= 0 and self.cmb_format.currentIndex() != i:
             self.cmb_format.setCurrentIndex(i)
-        self.lbl_status.setText("链接格式: %s" % dict(
-            (k, l) for l, k in LINK_FORMATS).get(key, key))
+        self.lbl_status.setText(tr("链接格式: %s") % dict(
+            (k, tr(l)) for l, k in LINK_FORMATS).get(key, key))
 
     # -- column layout -------------------------------------------------
     def _fit_columns(self) -> None:
@@ -548,8 +599,8 @@ class MainWindow(QtWidgets.QMainWindow):
     def _configure_subscription(self) -> bool:
         urls = self.settings.get("subscriptions") or []
         value, accepted = QtWidgets.QInputDialog.getText(
-            self, "设置代理订阅", "填写 HTTP/HTTPS 订阅地址（仅保存在本机）：",
-            QtWidgets.QLineEdit.Password, urls[0] if urls else "")
+            self, tr("设置代理订阅"), tr("填写 HTTP/HTTPS 订阅地址（仅保存在本机）："),
+            QtWidgets.QLineEdit.EchoMode.Password, urls[0] if urls else "")
         if not accepted:
             return False
         value = value.strip()
@@ -559,13 +610,13 @@ class MainWindow(QtWidgets.QMainWindow):
         except ValueError:
             valid = False
         if not valid:
-            QtWidgets.QMessageBox.warning(self, "订阅地址无效", "请填写完整的 HTTP/HTTPS 订阅地址。")
+            QtWidgets.QMessageBox.warning(self, tr("订阅地址无效"), tr("请填写完整的 HTTP/HTTPS 订阅地址。"))
             return False
         self.settings["subscriptions"] = [value]
         self._save_settings()
         if self.core is not None:
             self.core.subscriptions = [value]
-        self.lbl_status.setText("订阅已保存，正在获取节点…")
+        self.lbl_status.setText(tr("订阅已保存，正在获取节点…"))
         if self.core is not None and self.core.running:
             self._refresh_subscription()
         else:
@@ -574,19 +625,19 @@ class MainWindow(QtWidgets.QMainWindow):
 
     def _start_proxy(self) -> None:
         if self.core is not None and self.core.running:
-            self.lbl_proxy.setText("代理: 已运行 · %s" % self.core.current_node)
+            self.lbl_proxy.setText(tr("代理: 已运行 · %s") % self.core.current_node)
             return
         urls = self.settings.get("subscriptions") or None
         self.core = MihomoCore(
             subscription_urls=urls,
             on_event=lambda kind, msg: self.sig_proxy.emit(kind, msg))
         if not self.core.subscriptions and not self.core.load_user_nodes():
-            self.lbl_proxy.setText("代理: 未配置订阅")
+            self.lbl_proxy.setText(tr("代理: 未配置订阅"))
             if self._configure_subscription():
                 return
-            self.lbl_status.setText("可在「代理 → 设置订阅地址」配置；当前使用直连")
+            self.lbl_status.setText(tr("可在「代理 → 设置订阅地址」配置；当前使用直连"))
             return
-        self.lbl_proxy.setText("代理: 启动中…")
+        self.lbl_proxy.setText(tr("代理: 启动中…"))
 
         def work():
             self.core.start()
@@ -595,13 +646,13 @@ class MainWindow(QtWidgets.QMainWindow):
     def _stop_proxy(self) -> None:
         if self.core is not None:
             self.core.stop()
-        self.lbl_proxy.setText("代理: 已停止")
+        self.lbl_proxy.setText(tr("代理: 已停止"))
 
     def _speedtest(self) -> None:
         if self.core is None or not self.core.running:
-            self.lbl_status.setText("代理未运行，先启动代理")
+            self.lbl_status.setText(tr("代理未运行，先启动代理"))
             return
-        self.lbl_status.setText("节点测速中…")
+        self.lbl_status.setText(tr("节点测速中…"))
 
         def work():
             best = self.core.manual_sweep()
@@ -612,20 +663,20 @@ class MainWindow(QtWidgets.QMainWindow):
         if self.core is None or not self.core.running:
             self._start_proxy()
             return
-        self.lbl_status.setText("正在重新获取订阅…")
+        self.lbl_status.setText(tr("正在重新获取订阅…"))
 
         def work():
             ok = self.core.refresh_subscription()
             self.sig_proxy.emit("info" if ok else "warn",
-                                "订阅已更新 (%d 节点)" % len(self.core.proxies)
-                                if ok else "订阅获取失败")
+                                tr("订阅已更新 (%d 节点)") % len(self.core.proxies)
+                                if ok else tr("订阅获取失败"))
         threading.Thread(target=work, daemon=True).start()
 
     # -- proxy text import ---------------------------------------------
     def _import_proxy_text(self) -> None:
         from .import_dialog import ImportProxyDialog, parse_for_preview
         dlg = ImportProxyDialog(self, on_parse=parse_for_preview)
-        if dlg.exec_() != QtWidgets.QDialog.Accepted:
+        if dlg.exec() != QtWidgets.QDialog.DialogCode.Accepted:
             return
         self._apply_imported(dlg.parsed)
 
@@ -635,7 +686,7 @@ class MainWindow(QtWidgets.QMainWindow):
         dlg._load_file()
         if not dlg.edit.toPlainText().strip():
             return
-        if dlg.exec_() != QtWidgets.QDialog.Accepted:
+        if dlg.exec() != QtWidgets.QDialog.DialogCode.Accepted:
             return
         self._apply_imported(dlg.parsed)
 
@@ -646,15 +697,15 @@ class MainWindow(QtWidgets.QMainWindow):
             self.core = MihomoCore(
                 subscription_urls=self.settings.get("subscriptions") or None,
                 on_event=lambda kind, msg: self.sig_proxy.emit(kind, msg))
-        self.lbl_status.setText("正在校验并应用 %d 个导入节点…" % len(proxies))
+        self.lbl_status.setText(tr("正在校验并应用 %d 个导入节点…") % len(proxies))
 
         def work():
             try:
                 self.core.apply_user_nodes(proxies)
                 self.sig_proxy.emit("node", "%s|0|%d" % (
-                    self.core.current_node or "导入节点", len(self.core.proxies)))
+                    self.core.current_node or tr("导入节点"), len(self.core.proxies)))
             except Exception as exc:  # noqa: BLE001
-                self.sig_proxy.emit("error", "导入失败: %s" % exc)
+                self.sig_proxy.emit("error", tr("导入失败: %s") % exc)
         threading.Thread(target=work, daemon=True).start()
 
     def _clear_imported(self) -> None:
@@ -664,10 +715,12 @@ class MainWindow(QtWidgets.QMainWindow):
                 on_event=lambda kind, msg: self.sig_proxy.emit(kind, msg))
         self.core.clear_user_nodes()
         self.core._pushed_nodes = []
-        self.lbl_status.setText("已清空手动导入的节点，下次刷新订阅后生效")
+        self.lbl_status.setText(tr("已清空手动导入的节点，下次刷新订阅后生效"))
 
-    @QtCore.pyqtSlot(str, str)
+    @QtCore.Slot(str, str)
     def _on_proxy_event(self, kind: str, msg: str) -> None:
+        if kind != 'node':
+            msg = i18n.translate_status(msg)
         if kind == "node":
             parts = msg.split("|")
             name = parts[0]
@@ -677,18 +730,18 @@ class MainWindow(QtWidgets.QMainWindow):
             except (IndexError, ValueError):
                 delay = total = 0
             if delay:
-                self.lbl_proxy.setText("代理: 运行中 · %s · %dms · %d个可用"
+                self.lbl_proxy.setText(tr("代理: 运行中 · %s · %dms · %d个可用")
                                        % (name, delay, total))
             else:
-                self.lbl_proxy.setText("代理: 运行中 · %s" % name)
+                self.lbl_proxy.setText(tr("代理: 运行中 · %s") % name)
             return
         if kind == "error":
-            self.lbl_proxy.setText("代理: 错误 · %s" % msg[:60])
+            self.lbl_proxy.setText(tr("代理: 错误 · %s") % msg[:60])
         elif kind == "warn":
-            self.lbl_proxy.setText("代理: %s" % msg[:70])
+            self.lbl_proxy.setText(tr("代理: %s") % msg[:70])
         elif self.core is not None and self.core.running:
-            self.lbl_proxy.setText("代理: 运行中 · %s" % (self.core.current_node or "自动"))
-        self.lbl_status.setText("代理: %s" % msg[:120])
+            self.lbl_proxy.setText(tr("代理: 运行中 · %s") % (self.core.current_node or tr("自动")))
+        self.lbl_status.setText(tr("代理: %s") % msg[:120])
 
     # -- misc ----------------------------------------------------------
     def _open_data_dir(self) -> None:
@@ -700,13 +753,13 @@ class MainWindow(QtWidgets.QMainWindow):
         if os.path.isfile(path):
             QtGui.QDesktopServices.openUrl(QtCore.QUrl.fromLocalFile(path))
         else:
-            self.lbl_status.setText("暂无 mihomo 日志")
+            self.lbl_status.setText(tr("暂无 mihomo 日志"))
 
     def _about(self) -> None:
-        mode = "%s\n数据目录: %s" % (data_dir_label(), data_dir())
+        mode = tr("%s\n数据目录: %s") % (data_dir_label(), data_dir())
         QtWidgets.QMessageBox.about(
-            self, "关于",
-            "<h3>TSearch-DS</h3>"
+            self, tr("关于"),
+            tr("<h3>TSearch-DS</h3>"
             "<p>磁力 / eD2k(电驴) / 迅雷 链接聚合搜索器 &nbsp;<b>from ds</b></p>"
             "<p>结果列 <b>名称 / 资源数 / 文件大小 / 文件类型 / 链接 / 来源</b>；"
             "表头可拖动换序、可调宽度；多选后按 Ctrl+C 复制（每行一个链接）。</p>"
@@ -716,7 +769,7 @@ class MainWindow(QtWidgets.QMainWindow):
             "节点失效时自动切换到可用节点。</p>"
             "<p>GPL-3.0-or-later，许可证见 COPYING。软件按现状提供，无担保，"
             "以适用法律允许的范围为限。搜索结果不代表获得内容使用许可。</p>"
-            "<p style='color:#8b949e'>%s</p>" % mode)
+            "<p style='color:#8b949e'>%s</p>") % mode)
 
     def closeEvent(self, event) -> None:  # noqa: N802
         for i in range(self.tabs.count()):

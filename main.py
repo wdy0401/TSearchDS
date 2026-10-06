@@ -2,7 +2,8 @@
 # See COPYING / LICENSE and NOTICE.md.
 """TSearch-DS entry point.
 
-A PyQt5 desktop search client for magnet / eD2k / thunder links with an
+A desktop search client for magnet / eD2k / thunder links with a
+pluggable widget toolkit (``--ui tk`` for Tkinter, ``--ui qt`` for PySide6), with an
 embedded mihomo proxy core.  Window title carries ``from ds``.
 """
 from __future__ import annotations
@@ -16,6 +17,12 @@ import traceback
 from typing import Dict, List
 
 APP_TITLE = "TSearch-DS · 磁力 / 电驴 / 迅雷 搜索   from ds"
+
+try:  # the CLI must still run if the UI package cannot be imported
+    from src.ui.i18n import tr
+except Exception:  # noqa: BLE001 - pragma: no cover
+    def tr(text):
+        return text
 
 
 def _data_dir_raw() -> str:
@@ -148,7 +155,8 @@ def _prepare_frozen_qt() -> None:
 
     The bundle carries the Qt libraries and plugins at the archive root (see
     ``build/TSearchDS.spec``), so the DLL search path and the Qt plugin paths
-    have to be pointed at the extraction directory *before* PyQt5 is imported.
+    have to be pointed at the extraction directory *before* PySide6 is
+    imported.
     """
     if not getattr(sys, "frozen", False):
         return
@@ -157,8 +165,9 @@ def _prepare_frozen_qt() -> None:
         return
     candidates = [
         base,
-        os.path.join(base, "PyQt5", "Qt5", "bin"),
-        os.path.join(base, "PyQt5", "Qt5", "plugins"),
+        os.path.join(base, "PySide6"),
+        os.path.join(base, "PySide6", "Qt", "bin"),
+        os.path.join(base, "PySide6", "Qt", "plugins"),
         os.path.join(base, "Library", "bin"),
     ]
     for path in candidates:
@@ -172,7 +181,7 @@ def _prepare_frozen_qt() -> None:
             os.environ["PATH"] = path + os.pathsep + os.environ.get("PATH", "")
         except Exception:
             pass
-    plug = os.path.join(base, "PyQt5", "Qt5", "plugins")
+    plug = os.path.join(base, "PySide6", "Qt", "plugins")
     if os.path.isdir(plug):
         os.environ.setdefault("QT_PLUGIN_PATH", plug)
     for sub in ("platforms", "styles", "imageformats", "iconengines"):
@@ -186,63 +195,27 @@ def _prepare_frozen_qt() -> None:
                     d + os.pathsep + os.environ.get("QT_PLUGIN_PATH", ""))
 
 
-def main(argv=None) -> int:
-    parser = argparse.ArgumentParser(prog="TSearch-DS", add_help=True)
-    parser.add_argument("--no-proxy", action="store_true",
-                        help="不启动内置 mihomo 代理")
-    parser.add_argument("--query", "-q", default="",
-                        help="启动后立即搜索的关键词")
-    parser.add_argument("--self-test", action="store_true",
-                        help="只做自检（依赖、mihomo、订阅），不进 GUI")
-    parser.add_argument("--smoke", metavar="关键词", default="",
-                        help="无界面跑一次完整流程（启动代理+搜索），结果写文件后退出")
-    parser.add_argument("--smoke-seconds", type=float, default=90.0,
-                        help="--smoke 的总时间预算")
-    parser.add_argument("--verbose", "-v", action="store_true")
-    args = parser.parse_args(argv)
+#: which widget toolkit the window is built with.  ``tk`` costs nothing to
+#: redistribute (Tcl/Tk ships with CPython); ``qt`` needs the LGPLv3 notices.
+DEFAULT_UI = os.environ.get("TSDS_UI", "tk")
 
-    if args.self_test or args.smoke:
-        # these modes are normally driven from a terminal, and in a windowed
-        # build the standard streams do not exist until we ask for them
-        _attach_console()
-        _enable_faulthandler()
 
-    _setup_logging(args.verbose)
-    log = logging.getLogger("tsds")
-    _prepare_frozen_qt()
-
-    if args.self_test:
-        return _self_test()
-    if args.smoke:
-        return _smoke(args.smoke, args.smoke_seconds)
-
-    # Qt must see the high-DPI flags before QApplication is constructed
+def _run_qt(args) -> int:
+    """PySide6 backend."""
+    from PySide6 import QtCore, QtGui, QtWidgets
+    # Qt 6 scales high-DPI displays by default; only the rounding policy is
+    # still an application choice (the Qt 5 AA_* attributes are gone).
     try:
-        from PyQt5 import QtCore, QtGui, QtWidgets
-        QtWidgets.QApplication.setAttribute(QtCore.Qt.AA_EnableHighDpiScaling, True)
-        QtWidgets.QApplication.setAttribute(QtCore.Qt.AA_UseHighDpiPixmaps, True)
-    except Exception:
-        from PyQt5 import QtCore, QtGui, QtWidgets  # noqa: F811
+        QtGui.QGuiApplication.setHighDpiScaleFactorRoundingPolicy(
+            QtCore.Qt.HighDpiScaleFactorRoundingPolicy.PassThrough)
+    except AttributeError:  # pragma: no cover - older Qt builds
+        pass
 
     app = QtWidgets.QApplication(sys.argv[:1])
     app.setApplicationName("TSearch-DS")
     app.setApplicationDisplayName(APP_TITLE)
     app.setQuitOnLastWindowClosed(True)
-
-    def _excepthook(etype, value, tb):
-        text = "".join(traceback.format_exception(etype, value, tb))
-        log.error("unhandled exception:\n%s", text)
-        try:
-            _write_crash("sys.excepthook")
-        except Exception:
-            pass
-        try:
-            QtWidgets.QMessageBox.critical(
-                None, "TSearch-DS 出错", text[-2000:])
-        except Exception:
-            pass
-
-    sys.excepthook = _excepthook
+    _install_excepthook()
 
     from src.core.fonts import apply_default_font
     apply_default_font(app)
@@ -259,10 +232,91 @@ def main(argv=None) -> int:
             # wait for the embedded proxy before hitting the indexes
             win.queue_search(args.query)
 
-    return app.exec_()
+    return app.exec()
 
 
-def _self_test() -> int:
+def _run_tk(args) -> int:
+    """Tkinter backend -- no third-party GUI dependency at all."""
+    import tkinter as tk
+
+    from src.ui_tk.main_window import MainWindow
+    root = tk.Tk()
+    _install_excepthook()
+    win = MainWindow(start_proxy=not args.no_proxy, root=root)
+
+    if args.query:
+        if args.no_proxy:
+            win.edit.set_value(args.query)
+            root.after(400, win.start_search)
+        else:
+            # wait for the embedded proxy before hitting the indexes
+            win.queue_search(args.query)
+
+    win.mainloop()
+    return 0
+
+
+def _install_excepthook() -> None:
+    def _excepthook(etype, value, tb):
+        log = logging.getLogger("tsds")
+        text = "".join(traceback.format_exception(etype, value, tb))
+        log.error("unhandled exception:\n%s", text)
+        try:
+            _write_crash("sys.excepthook")
+        except Exception:
+            pass
+        try:
+            title = tr("TSearch-DS 出错")
+            if DEFAULT_UI == "tk":
+                from tkinter import messagebox
+                messagebox.showerror(title, text[-2000:])
+            else:
+                from PySide6 import QtWidgets
+                QtWidgets.QMessageBox.critical(None, title, text[-2000:])
+        except Exception:
+            pass
+
+    sys.excepthook = _excepthook
+
+
+def main(argv=None) -> int:
+    parser = argparse.ArgumentParser(prog="TSearch-DS", add_help=True)
+    parser.add_argument("--ui", choices=("tk", "qt"), default=DEFAULT_UI,
+                        help=tr("界面后端：tk（Tkinter，随 Python 自带）/ qt（PySide6）"))
+    parser.add_argument("--no-proxy", action="store_true",
+                        help=tr("不启动内置 mihomo 代理"))
+    parser.add_argument("--query", "-q", default="",
+                        help=tr("启动后立即搜索的关键词"))
+    parser.add_argument("--self-test", action="store_true",
+                        help=tr("只做自检（依赖、mihomo、订阅），不进 GUI"))
+    parser.add_argument("--smoke", metavar=tr("关键词"), default="",
+                        help=tr("无界面跑一次完整流程（启动代理+搜索），结果写文件后退出"))
+    parser.add_argument("--smoke-seconds", type=float, default=90.0,
+                        help=tr("--smoke 的总时间预算"))
+    parser.add_argument("--verbose", "-v", action="store_true")
+    args = parser.parse_args(argv)
+
+    if args.self_test or args.smoke:
+        # these modes are normally driven from a terminal, and in a windowed
+        # build the standard streams do not exist until we ask for them
+        _attach_console()
+        _enable_faulthandler()
+
+    _setup_logging(args.verbose)
+    log = logging.getLogger("tsds")
+    _prepare_frozen_qt()
+
+    if args.self_test:
+        return _self_test(args.ui)
+    if args.smoke:
+        return _smoke(args.smoke, args.smoke_seconds)
+
+    if args.ui == "tk":
+        return _run_tk(args)
+    return _run_qt(args)
+
+
+def _self_test(ui: str = DEFAULT_UI) -> int:
     """Headless diagnostics -- useful when the packaged exe misbehaves."""
     out = Reporter("selftest.txt")
 
@@ -271,44 +325,66 @@ def _self_test() -> int:
     out("python     : %s" % sys.version.split()[0])
     out("frozen     : %s" % getattr(sys, "frozen", False))
     out("executable : %s" % sys.executable)
-    try:
-        import PyQt5  # noqa: F401
-        out("PyQt5      : ok")
-    except Exception as exc:  # noqa: BLE001
-        out("PyQt5      : FAIL %s" % exc)
-        ok = False
+    out("ui backend : %s" % ui)
 
-    # importing the package is not enough -- Qt's own DLLs are a separate
-    # failure mode that only shows up when a real Qt module is loaded
-    try:
-        _prepare_frozen_qt()
-        os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
-        from PyQt5 import QtCore, QtGui, QtWidgets  # noqa: F401
-        out("QtCore     : %s" % QtCore.QT_VERSION_STR)
-        out("QtWidgets  : ok")
-        _app = QtWidgets.QApplication.instance() or QtWidgets.QApplication(["selftest"])
-        _scr = QtWidgets.QWidget()
-        _scr.resize(120, 60)
-        _scr.show()
-        _app.processEvents()
-        _scr.close()
-        out("Qt window  : ok")
-    except Exception as exc:  # noqa: BLE001
-        import traceback as _tb
-        out("Qt module  : FAIL %s" % exc)
-        out(_tb.format_exc()[-900:])
-        ok = False
+    # ---- toolkit probe (only the selected backend has to work)
+    if ui == "tk":
+        try:
+            import tkinter
+            out("tkinter    : %s" % tkinter.TkVersion)
+            _probe = tkinter.Tk()
+            _probe.withdraw()
+            out("Tk window  : ok (Tcl %s)" % tkinter.TclVersion)
+            _probe.destroy()
+        except Exception as exc:  # noqa: BLE001
+            import traceback as _tb
+            out("tkinter    : FAIL %s" % exc)
+            out(_tb.format_exc()[-900:])
+            ok = False
+    else:
+        try:
+            import PySide6  # noqa: F401
+            out("PySide6    : %s" % getattr(PySide6, "__version__", "ok"))
+        except Exception as exc:  # noqa: BLE001
+            out("PySide6    : FAIL %s" % exc)
+            ok = False
+
+        # importing the package is not enough -- Qt's own DLLs are a separate
+        # failure mode that only shows up when a real Qt module is loaded
+        try:
+            _prepare_frozen_qt()
+            os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
+            from PySide6 import QtCore, QtGui, QtWidgets  # noqa: F401
+            out("QtCore     : %s" % QtCore.qVersion())
+            out("QtWidgets  : ok")
+            _app = QtWidgets.QApplication.instance() or QtWidgets.QApplication(["selftest"])
+            _scr = QtWidgets.QWidget()
+            _scr.resize(120, 60)
+            _scr.show()
+            _app.processEvents()
+            _scr.close()
+            out("Qt window  : ok")
+        except Exception as exc:  # noqa: BLE001
+            import traceback as _tb
+            out("Qt module  : FAIL %s" % exc)
+            out(_tb.format_exc()[-900:])
+            ok = False
 
     # the tabbed window is what the user actually double-clicks into, so build
     # it here too: a missing module in the bundle only shows up at that point
     try:
-        from src.ui.main_window import MainWindow, ResultModel
+        if ui == "tk":
+            from src.ui_tk.main_window import MainWindow
+            from src.ui_tk.result_model import ResultModel
+        else:
+            from src.ui.main_window import MainWindow, ResultModel
         _win = MainWindow(start_proxy=False)
         _t1 = _win.current_tab()
         _t2 = _win.new_tab(query="selftest")
         out("window     : ok (%d tabs)" % _win.tabs.count())
         out("tabs       : %s" % ", ".join(
-            _win.tabs.tabText(i) for i in range(_win.tabs.count())))
+            _win.tabs.tabText(i).replace(" ✕", "")
+            for i in range(_win.tabs.count())))
         if _win.tabs.count() != 2 or _t1 is _t2:
             raise AssertionError("tab handling is broken")
         if _t2.model.columnCount() != len(ResultModel.HEADERS):
@@ -327,7 +403,7 @@ def _self_test() -> int:
         out("data dir   : %s" % d)
         out("mode       : %s" % data_dir_label())
         b = locate_binary()
-        out("mihomo     : %s" % (b or "NOT FOUND (will auto-download)"))
+        out("mihomo     : %s" % (b or "NOT FOUND (obtain from official upstream)"))
         if b:
             import subprocess
             p = subprocess.run(
@@ -345,7 +421,7 @@ def _self_test() -> int:
         srcs = REGISTRY.all()
         out("sources    : %d" % len(srcs))
         for s in srcs:
-            out("   - %-16s %s" % (s.id, s.label))
+            out("   - %-16s %s" % (s.id, tr(s.label)))
     except Exception as exc:  # noqa: BLE001
         out("sources    : FAIL %s" % exc)
         ok = False
@@ -367,10 +443,10 @@ def _self_test() -> int:
         if not _job:
             raise OSError("CreateJobObjectW failed")
         _k.CloseHandle(wintypes.HANDLE(_job))
-        out("ctypes/job : ok (子进程可随主进程一并终止)")
+        out("ctypes/job : ok (%s)" % tr("子进程可随主进程一并终止"))
     except Exception as exc:  # noqa: BLE001
         out("ctypes/job : FAIL %s" % exc)
-        out("             -> 强杀程序时 mihomo 可能残留，下次启动会自动清理")
+        out("             -> %s" % tr("强杀程序时 mihomo 可能残留，下次启动会自动清理"))
         ok = False
 
     try:
@@ -456,12 +532,13 @@ def _smoke(query: str, budget: float) -> int:
         out("errors     : %s" % {k: v[:70] for k, v in sess.errors.items()})
         out("")
         out("%-5s | %-8s | %-52s | %-9s | %-8s | %s"
-            % ("资源数", "文件大小", "名称", "文件类型", "来源", "链接"))
+            % (tr("资源数"), tr("文件大小"), tr("名称"),
+               tr("文件类型"), tr("来源"), tr("链接")))
         out("-" * 158)
         for r in sess.results[:25]:
             out("%-5s | %-8s | %-52s | %-9s | %-8s | %s"
                 % (r.seeds_display, r.size_display, r.name[:52],
-                   r.type_display, r.source[:8], r.link[:56]))
+                   tr(r.type_display), r.source[:8], r.link[:56]))
         # a breakdown so the two new columns are actually visible in the report
         types: Dict[str, int] = {}
         sized = 0
@@ -470,8 +547,10 @@ def _smoke(query: str, budget: float) -> int:
             if r.size_bytes:
                 sized += 1
         out("")
-        out("文件类型分布 : %s" % dict(sorted(types.items(), key=lambda kv: -kv[1])))
-        out("有文件大小   : %d/%d" % (sized, len(sess.results)))
+        out(tr("文件类型分布 : %s")
+            % dict(sorted((tr(k), v) for k, v in types.items()),
+                   key=lambda kv: -kv[1]))
+        out(tr("有文件大小   : %d/%d") % (sized, len(sess.results)))
         out("")
         out("total results: %d" % len(sess.results))
     except Exception as exc:  # noqa: BLE001
@@ -500,7 +579,7 @@ if __name__ == "__main__":
         try:
             import ctypes
             ctypes.windll.user32.MessageBoxW(
-                None, "TSearch-DS 启动失败，详情见 crash.txt",
+                None, tr("TSearch-DS 启动失败，详情见 crash.txt"),
                 "TSearch-DS", 0x10)
         except Exception:
             pass

@@ -9,9 +9,12 @@ It is provided without warranty, including merchantability or fitness for a
 particular purpose, to the extent permitted by applicable law. This notice does
 not override mandatory legal rights or upstream copyright notices.
 
-Public distributions contain source only. Python, PyQt5, Qt, mihomo and other
-dependencies are installed or obtained separately by the user. No dependency
-binaries or usable proxy credentials are included in public source archives.
+Public distributions contain application source only. The default interface is
+Python tkinter/ttk. Tcl/Tk uses permissive license terms; binaries must retain
+Python and Tcl/Tk notices. The default build excludes Qt bindings and libraries.
+An optional PySide6 development backend remains in source; anyone distributing
+that backend must satisfy its separate license requirements. See THIRD_PARTY.md.
+No dependency binaries or usable proxy credentials are included in public archives.
 
 Preserve existing authorship and third-party notices. No claim is made that
 publication establishes exclusive ownership of every line of code. Contributions

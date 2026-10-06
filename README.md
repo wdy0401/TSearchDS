@@ -1,6 +1,6 @@
 # TSearch-DS
 
-Windows desktop search for magnet, eD2k and torrent links, built with Python / PyQt5.
+Windows desktop search for magnet, eD2k and torrent links, built with Python / Tkinter (ttk).
 
 Source-only distribution: this repository and its releases do not provide precompiled applications or bundled third-party binaries.
 
@@ -12,6 +12,14 @@ Source-only distribution: this repository and its releases do not provide precom
 - eD2k server/Kad adapters and background tracker enrichment.
 - Optional local mihomo proxy; users supply their own subscription or import nodes. No default subscription is embedded.
 - Multiselect copying, sorting, filtering and movable/resizable columns. No saved search-history database; see PRIVACY.md for network and diagnostic traces.
+- English and Simplified Chinese interface. English is the default; switch at runtime from the "Language" menu without losing open tabs, results or selections.
+
+## User interface
+
+The default UI uses Python's standard tkinter/ttk and permissively licensed
+Tcl/Tk. The default EXE excludes all Qt bindings and libraries. An optional
+PySide6 development backend is available with `requirements-qt.txt` and
+`python main.py --ui qt`; see THIRD_PARTY.md for its separate obligations.
 
 ## Run and build
 
@@ -25,11 +33,11 @@ Subscriptions are saved locally as plaintext in `data/settings.json` in portable
 
 ## Tests
 
-`python tests/test_source_column.py`
-
-`python tests/test_subscription_setup.py`
-
 `python tests/test_public_sources.py`
+
+`python tests/test_tkinter_ui.py`
+
+`python tests/test_release_compliance.py` (source-release gate: declared dependencies, no PyQt5 leftovers, synthetic proxy fixtures only, SPDX headers)
 
 `python tests/test_gate.py`
 
@@ -37,13 +45,15 @@ Subscriptions are saved locally as plaintext in `data/settings.json` in portable
 
 `python tests/test_privacy.py`
 
-Tests above do not query public indexes. `tests/test_tabs.py` also checks concurrent searches and requires internet access.
+Tkinter tests run offline. Legacy Qt tests (test_language, test_source_column, test_subscription_setup) require requirements-qt.txt. Tests above do not query public indexes. `tests/test_tabs.py` also checks concurrent searches and requires internet access.
 
 ## Scope and licensing
 
 Search coverage depends on enabled sources, their availability and network conditions. The app searches and copies links; it is not a downloader. Only access and redistribute material you are entitled to use.
 
-GPL-3.0-or-later; see COPYING. PyQt5/Qt and mihomo have their own licensing requirements. If you build and redistribute binaries yourself, you must separately satisfy the licenses of all bundled components. Do not upload private subscription configuration, personal ZIPs or runtime data.
+GPL-3.0-or-later; see COPYING. Preserve third-party license notices and satisfy
+source requirements when redistributing binaries. See THIRD_PARTY.md. Do not
+upload private subscriptions, personal packages or runtime data.
 
 ## Release and privacy policy
 

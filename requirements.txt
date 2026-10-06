@@ -1,5 +1,19 @@
-PyQt5>=5.15,<6
+# --- GUI backend -------------------------------------------------------
+# Default is Tkinter: it ships with CPython (Tcl/Tk, TCL license) and adds no
+# Qt copyleft obligation. Preserve Python and Tcl/Tk notices in binary builds.
+# Run with `--ui qt` for the
+# PySide6 backend instead, or install the extra below.
+#
+# Only the Qt Essentials modules are used (QtCore / QtGui / QtWidgets); in the
+# open-source Qt build these are LGPLv3.  Installing the full PySide6 also
+# works, but then keep the add-on modules out of any redistributed bundle --
+# see THIRD_PARTY.md and docs/UI_FRAMEWORK_COMPARISON.md.
+# Optional Qt development backend: install requirements-qt.txt separately.
+
+# --- everything else ---------------------------------------------------
 requests>=2.31,<3
+# imported directly by src/core/http.py (retry policy), not just transitively
+urllib3>=2,<3
 PyYAML>=6,<7
 lxml>=5
-PyInstaller>=6,<7
+PyInstaller>=6,<7   # build tool only

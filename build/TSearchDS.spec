@@ -81,71 +81,16 @@ def _conda_runtime_dlls():
     return [(path, ".") for path in found.values()]
 
 
-def _conda_qt_binaries():
-    """Collect conda's Qt runtime.
-
-    A conda ``PyQt5`` links against ``Qt5Core_conda.dll`` (conda renames the Qt
-    libraries to avoid clashing in ``Library/bin``) while PyInstaller's PyQt5
-    hook only looks for the standard ``PyQt5/Qt5/bin/Qt5Core.dll`` layout.  The
-    result is a frozen app that dies at ``import PyQt5.QtCore`` with
-    "DLL load failed".  Everything therefore has to be added by hand.
-    """
-    import glob
-    import sys as _sys
-
-    roots = [getattr(_sys, "prefix", ""), getattr(_sys, "base_prefix", "")]
-    out = []
-    seen = set()
-    # Only the Qt modules this app can actually touch.  Bundling all 75
-    # Qt5*.dll from Library/bin adds ~80 MB of WebEngine/Quick/3D/Charts that
-    # is never loaded.
-    qt_patterns = ("Qt5Core*.dll", "Qt5Gui*.dll", "Qt5Widgets*.dll",
-                   "Qt5Svg*.dll", "Qt5Network*.dll")
-    for root in dict.fromkeys(r for r in roots if r):
-        bindir = os.path.join(root, "Library", "bin")
-        if os.path.isdir(bindir):
-            for pat in qt_patterns + ("libGLESv2.dll", "libEGL.dll",
-                                      "libgcc_s_seh-1.dll", "libstdc++-6.dll",
-                                      "libwinpthread-1.dll"):
-                for f in glob.glob(os.path.join(bindir, pat)):
-                    if f not in seen:
-                        seen.add(f)
-                        # root: QtCore.pyd lives there, so Windows resolves
-                        # its dependencies from the module's own directory
-                        out.append((f, "."))
-        pdir = os.path.join(root, "Library", "plugins")
-        if os.path.isdir(pdir):
-            for sub in ("platforms", "styles", "imageformats",
-                        "iconengines", "platformthemes", "accessible"):
-                d = os.path.join(pdir, sub)
-                if not os.path.isdir(d):
-                    continue
-                for f in glob.glob(os.path.join(d, "*.dll")):
-                    if (f, sub) in seen:
-                        continue
-                    seen.add((f, sub))
-                    # both the layout PyInstaller's runtime hook exports via
-                    # QT_PLUGIN_PATH and a flat copy at the bundle root
-                    out.append((f, "PyQt5/Qt5/plugins/" + sub))
-                    out.append((f, sub))
-    return out
-
-
-EXTRA_BINARIES = _conda_runtime_dlls() + _conda_qt_binaries()
+EXTRA_BINARIES = _conda_runtime_dlls()
 
 EXCLUDES = [
     # keep the bundle small; an Anaconda base env would otherwise drag in GBs
-    "tkinter", "matplotlib", "numpy", "pandas", "scipy", "PIL",
+    "PyQt5", "PyQt6", "PySide2", "PySide6", "shiboken6", "src.ui.main_window",
+    "src.ui.result_model", "src.ui.search_tab", "src.ui.import_dialog",
+    "matplotlib", "numpy", "pandas", "scipy", "PIL",
     "IPython", "jupyter", "notebook", "sqlalchemy", "sympy", "numba",
     "cupy", "pyarrow", "bokeh", "sphinx", "pytest", "setuptools",
-    "PyQt5.QtWebEngineWidgets", "PyQt5.QtWebEngineCore", "PyQt5.QtWebEngine",
-    "PyQt5.QtQml", "PyQt5.QtQuick", "PyQt5.QtQuickWidgets", "PyQt5.Qt3DCore",
-    "PyQt5.QtBluetooth", "PyQt5.QtDesigner", "PyQt5.QtHelp",
-    "PyQt5.QtMultimedia", "PyQt5.QtMultimediaWidgets", "PyQt5.QtNfc",
-    "PyQt5.QtOpenGL", "PyQt5.QtPositioning", "PyQt5.QtSql",
-    "PyQt5.QtSerialPort", "PyQt5.QtTest", "PyQt5.QtXml", "PyQt5.QtXmlPatterns",
-    "PyQt5.QtLocation", "PyQt5.QtSensors", "PyQt5.QtWebSockets",
-    "PyQt5.QtWebChannel", "PyQt5.QtPrintSupport",
+
 ]
 
 hidden = [
@@ -164,8 +109,8 @@ hidden = [
     "src.core.parallel",
     "src.core.gateway",
     "src.core.logredact",
-    "src.ui.result_model",
-    "src.ui.search_tab",
+    "tkinter", "_tkinter", "src.ui_tk.main_window",
+    "src.ui_tk.result_model", "src.ui_tk.search_tab", "src.ui_tk.import_dialog",
     "src.core.sources.torrents",
     "src.core.sources.archive",
     "src.core.sources.ed2k",
@@ -191,8 +136,14 @@ a = Analysis(
     noarchive=False,
 )
 
-# NOTE: PyInstaller's bundled PyQt5 hook already collects the Qt plugins and
-# translations we need, so no manual datas entries are required here.
+# PATH may contain a different Conda environment. Pair Tcl/Tk DLLs with
+# the scripts collected by the tkinter hook, never an unrelated PATH copy.
+for index, item in enumerate(a.binaries):
+    name, source, kind = item
+    if os.path.basename(name).lower() in ("tcl86t.dll", "tk86t.dll"):
+        matching = os.path.join(sys.prefix, "Library", "bin", os.path.basename(name))
+        if os.path.isfile(matching):
+            a.binaries[index] = (name, matching, kind)
 
 pyz = PYZ(a.pure)
 

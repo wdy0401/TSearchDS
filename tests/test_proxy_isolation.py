@@ -14,6 +14,7 @@ import os
 import re
 import subprocess
 import sys
+import tempfile
 import time
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -58,7 +59,7 @@ def main() -> int:
     # ------------------------------------------------------------------
     section("2. 生成的 config 必须是纯本地代理")
     core = MihomoCore(binary=os.path.join(ROOT, "src", "resources", "mihomo.exe"),
-                      workdir=r"C:\tmp\tsds_isolation",
+                      workdir=os.path.join(tempfile.gettempdir(), "tsds_isolation"),
                       mixed_port=17895, controller_port=19095)
     os.makedirs(core.workdir, exist_ok=True)
     cfg = core.build_config(proxies)
@@ -189,7 +190,7 @@ def main() -> int:
             creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0))
         return o.stdout.decode("utf-8", "replace").strip() != ""
 
-    wd = r"C:\tmp\tsds_orphan_test"
+    wd = os.path.join(tempfile.gettempdir(), "tsds_orphan_test")
     os.makedirs(wd, exist_ok=True)
     seed_core = MihomoCore(binary=os.path.join(ROOT, "src", "resources", "mihomo.exe"),
                            workdir=wd, mixed_port=17897, controller_port=19097)

@@ -10,7 +10,7 @@ import unittest
 from unittest.mock import patch, Mock
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parents[1]))
 os.environ.setdefault('QT_QPA_PLATFORM', 'offscreen')
-from PyQt5 import QtWidgets
+from PySide6 import QtWidgets
 from src.ui.main_window import MainWindow
 from src.core.proxy.core import MihomoCore
 from src.core.proxy.subscription import DEFAULT_SUBSCRIPTIONS

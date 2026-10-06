@@ -1,0 +1,2 @@
+# Optional development backend; excluded from the default Tkinter EXE.
+PySide6-Essentials>=6.8,<7

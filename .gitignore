@@ -24,3 +24,9 @@ __pycache__/
 /docs/smoke*.txt
 
 /src/resources/mihomo.exe
+
+# Rust / Tauri build output (tauri/src-tauri/target can exceed 1 GB)
+/tauri/src-tauri/target/
+/tauri/node_modules/
+# tauri/src-tauri/gen/schemas is intentionally tracked: it is small and gives
+# editors autocomplete for tauri.conf.json.

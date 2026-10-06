@@ -8,24 +8,19 @@ subscription blob, or a plain list of node URIs.
 """
 from __future__ import annotations
 
+from .i18n import tr
+
 from typing import List, Optional, Tuple
 
-from PyQt5 import QtCore, QtGui, QtWidgets
+from PySide6 import QtCore, QtGui, QtWidgets
 
-PLACEHOLDER = """在此粘贴代理配置或节点内容，例如：
-
-  • FlClash / Clash Verge / mihomo 导出的完整配置（含 proxies: 段）
-  • 只有 proxies: 的 YAML 片段
-  • 一行一个的节点链接：vless:// vmess:// trojan:// ss:// hysteria2:// tuic://
-  • base64 编码的订阅内容
-
-导入后会自动剔除 mihomo 无法加载的节点，并与订阅合并使用。"""
+from .constants import PLACEHOLDER  # noqa: F401  (re-exported for callers)
 
 
 class ImportProxyDialog(QtWidgets.QDialog):
     def __init__(self, parent=None, on_parse=None) -> None:
         super().__init__(parent)
-        self.setWindowTitle("导入代理内容 · from ds")
+        self.setWindowTitle(tr("导入代理内容 · from ds"))
         self.resize(820, 580)
         self._on_parse = on_parse
         self.parsed: List[dict] = []
@@ -33,34 +28,34 @@ class ImportProxyDialog(QtWidgets.QDialog):
         root = QtWidgets.QVBoxLayout(self)
 
         hint = QtWidgets.QLabel(
-            "支持 Clash / mihomo YAML 全文、proxies 片段、节点链接列表、base64 订阅。")
+            tr("支持 Clash / mihomo YAML 全文、proxies 片段、节点链接列表、base64 订阅。"))
         hint.setWordWrap(True)
         root.addWidget(hint)
 
         self.edit = QtWidgets.QPlainTextEdit()
-        self.edit.setPlaceholderText(PLACEHOLDER)
-        self.edit.setLineWrapMode(QtWidgets.QPlainTextEdit.NoWrap)
+        self.edit.setPlaceholderText(tr(PLACEHOLDER))
+        self.edit.setLineWrapMode(QtWidgets.QPlainTextEdit.LineWrapMode.NoWrap)
         self.edit.setFont(QtGui.QFont("Consolas, Courier New", 9))
         self.edit.textChanged.connect(self._schedule_check)
         root.addWidget(self.edit, 1)
 
         row = QtWidgets.QHBoxLayout()
-        self.btn_paste = QtWidgets.QPushButton("从剪贴板粘贴")
-        self.btn_file = QtWidgets.QPushButton("从文件导入…")
-        self.btn_clear = QtWidgets.QPushButton("清空")
+        self.btn_paste = QtWidgets.QPushButton(tr("从剪贴板粘贴"))
+        self.btn_file = QtWidgets.QPushButton(tr("从文件导入…"))
+        self.btn_clear = QtWidgets.QPushButton(tr("清空"))
         row.addWidget(self.btn_paste)
         row.addWidget(self.btn_file)
         row.addWidget(self.btn_clear)
         row.addStretch(1)
         root.addLayout(row)
 
-        self.lbl = QtWidgets.QLabel("等待内容…")
+        self.lbl = QtWidgets.QLabel(tr("等待内容…"))
         self.lbl.setWordWrap(True)
         root.addWidget(self.lbl)
 
         btns = QtWidgets.QDialogButtonBox()
-        self.btn_ok = btns.addButton("导入并使用", QtWidgets.QDialogButtonBox.AcceptRole)
-        btns.addButton("取消", QtWidgets.QDialogButtonBox.RejectRole)
+        self.btn_ok = btns.addButton(tr("导入并使用"), QtWidgets.QDialogButtonBox.ButtonRole.AcceptRole)
+        btns.addButton(tr("取消"), QtWidgets.QDialogButtonBox.ButtonRole.RejectRole)
         self.btn_ok.setEnabled(False)
         root.addWidget(btns)
 
@@ -98,15 +93,15 @@ class ImportProxyDialog(QtWidgets.QDialog):
 
     def _load_file(self) -> None:
         path, _ = QtWidgets.QFileDialog.getOpenFileName(
-            self, "选择配置文件", "",
-            "配置文件 (*.yaml *.yml *.txt *.conf *.json);;所有文件 (*)")
+            self, tr("选择配置文件"), "",
+            tr("配置文件 (*.yaml *.yml *.txt *.conf *.json);;所有文件 (*)"))
         if not path:
             return
         try:
             with open(path, "r", encoding="utf-8", errors="replace") as fh:
                 self.edit.setPlainText(fh.read())
         except OSError as exc:
-            QtWidgets.QMessageBox.warning(self, "读取失败", str(exc))
+            QtWidgets.QMessageBox.warning(self, tr("读取失败"), str(exc))
 
     def _check(self) -> None:
         text = self.edit.toPlainText()
@@ -118,7 +113,7 @@ class ImportProxyDialog(QtWidgets.QDialog):
             self.parsed = []
             self.btn_ok.setEnabled(False)
             if not text.strip():
-                self.lbl.setText("等待内容…")
+                self.lbl.setText(tr("等待内容…"))
                 self.lbl.setStyleSheet("")
             else:
                 self.lbl.setText("⚠ %s" % err)
@@ -130,7 +125,7 @@ class ImportProxyDialog(QtWidgets.QDialog):
         for p in proxies:
             kinds[str(p.get("type"))] = kinds.get(str(p.get("type")), 0) + 1
         detail = ", ".join("%s×%d" % (k, v) for k, v in sorted(kinds.items()))
-        self.lbl.setText("✔ 识别到 %d 个节点 (%s)" % (len(proxies), detail))
+        self.lbl.setText(tr("✔ 识别到 %d 个节点 (%s)") % (len(proxies), detail))
         self.lbl.setStyleSheet("color:#1a7f37;")
 
     def accept(self) -> None:
@@ -138,7 +133,7 @@ class ImportProxyDialog(QtWidgets.QDialog):
             self._check()
         if not self.parsed:
             QtWidgets.QMessageBox.information(
-                self, "没有可用节点", "没有从内容中解析出任何可用节点。")
+                self, tr("没有可用节点"), tr("没有从内容中解析出任何可用节点。"))
             return
         super().accept()
 

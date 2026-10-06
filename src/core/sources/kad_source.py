@@ -69,9 +69,6 @@ def _bundled_nodes() -> List[str]:
         out.append(os.path.join(app_dir(), "resources", "nodes.dat"))
     except Exception:
         pass
-    for probe in (r"C:\Users\wdy04\Desktop\desktop\TSearch\nodes.dat",):
-        if os.path.isfile(probe):
-            out.append(probe)
     return [p for p in out if p and os.path.isfile(p)]
 
 

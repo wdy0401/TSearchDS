@@ -20,7 +20,7 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, ROOT)
 os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
 
-from PyQt5 import QtWidgets  # noqa: E402
+from PySide6 import QtWidgets  # noqa: E402
 
 from src.core.logredact import install as install_redaction  # noqa: E402
 from src.core.links import safe_page_url  # noqa: E402

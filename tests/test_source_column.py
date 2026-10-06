@@ -7,23 +7,32 @@ import sys
 import unittest
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parents[1]))
 os.environ.setdefault('QT_QPA_PLATFORM', 'offscreen')
-from PyQt5 import QtCore, QtWidgets
+from PySide6 import QtCore, QtWidgets
 from src.core.aggregator import SearchSession
 from src.core.models import SearchResult
 from src.ui.result_model import ResultModel
 from src.ui.search_tab import SearchTab
+from src.ui import i18n
 
 class SourceColumnTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         cls.app = QtWidgets.QApplication.instance() or QtWidgets.QApplication([])
 
+    def setUp(self):
+        # these assertions are written against the Chinese labels; pin the
+        # language instead of depending on whatever the default happens to be
+        i18n.set_language('zh_CN')
+
+    def tearDown(self):
+        i18n.set_language(i18n.DEFAULT_LANGUAGE)
+
     def test_six_columns_and_friendly_multiple_sources(self):
         model = ResultModel()
         model.add([SearchResult(name='Linux', link='magnet:?xt=urn:btih:'+'a'*40,
                                 source='rutor', extra={'srcs':['rutor','internetarchive','rutor']})])
         self.assertEqual(model.columnCount(), 6)
-        self.assertEqual(model.headerData(5, QtCore.Qt.Horizontal), '来源')
+        self.assertEqual(model.headerData(5, QtCore.Qt.Orientation.Horizontal), '来源')
         self.assertEqual(model.data(model.index(0, 5)), 'RuTor、Internet Archive（公开种子）')
 
     def test_duplicate_origin_triggers_refresh_without_extra_row(self):

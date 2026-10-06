@@ -13,11 +13,13 @@ here, which Qt queues onto the GUI thread.
 """
 from __future__ import annotations
 
+from .i18n import tr
+
 import logging
 import time
 from typing import List, Optional
 
-from PyQt5 import QtCore, QtGui, QtWidgets
+from PySide6 import QtCore, QtGui, QtWidgets
 
 from ..core.aggregator import SearchSession
 from ..core.links import link_to_ed2k, link_to_magnet, link_to_thunder, safe_page_url
@@ -30,13 +32,13 @@ log = logging.getLogger("tsearch.ui.tab")
 class SearchTab(QtWidgets.QWidget):
     """Results of exactly one keyword search."""
 
-    sig_results = QtCore.pyqtSignal(list)
-    sig_status = QtCore.pyqtSignal(str, str)
-    sig_done = QtCore.pyqtSignal(str)
+    sig_results = QtCore.Signal(list)
+    sig_status = QtCore.Signal(str, str)
+    sig_done = QtCore.Signal(str)
     #: tab label (title text)
-    sig_title = QtCore.pyqtSignal(str)
+    sig_title = QtCore.Signal(str)
     #: message for the shared status bar
-    sig_message = QtCore.pyqtSignal(str)
+    sig_message = QtCore.Signal(str)
 
     def __init__(self, owner, query: str = "") -> None:
         super().__init__(owner)
@@ -75,10 +77,10 @@ class SearchTab(QtWidgets.QWidget):
         bar = QtWidgets.QHBoxLayout()
         bar.setSpacing(6)
         self.filter_edit = QtWidgets.QLineEdit()
-        self.filter_edit.setPlaceholderText("在本标签的结果里过滤…")
+        self.filter_edit.setPlaceholderText(tr("在本标签的结果里过滤…"))
         self.filter_edit.setClearButtonEnabled(True)
         self.filter_edit.setMaximumWidth(260)
-        bar.addWidget(QtWidgets.QLabel("过滤:"))
+        bar.addWidget(QtWidgets.QLabel(tr("过滤:")))
         bar.addWidget(self.filter_edit)
         bar.addStretch(1)
         self.lbl_tab_status = QtWidgets.QLabel("")
@@ -88,9 +90,9 @@ class SearchTab(QtWidgets.QWidget):
 
         self.table = QtWidgets.QTableView()
         self.table.setModel(self.proxy_model)
-        self.table.setSelectionBehavior(QtWidgets.QAbstractItemView.SelectRows)
-        self.table.setSelectionMode(QtWidgets.QAbstractItemView.ExtendedSelection)
-        self.table.setEditTriggers(QtWidgets.QAbstractItemView.NoEditTriggers)
+        self.table.setSelectionBehavior(QtWidgets.QAbstractItemView.SelectionBehavior.SelectRows)
+        self.table.setSelectionMode(QtWidgets.QAbstractItemView.SelectionMode.ExtendedSelection)
+        self.table.setEditTriggers(QtWidgets.QAbstractItemView.EditTrigger.NoEditTriggers)
         self.table.setAlternatingRowColors(True)
         self.table.setSortingEnabled(True)
         self.table.setWordWrap(False)
@@ -102,16 +104,16 @@ class SearchTab(QtWidgets.QWidget):
         hh.setSectionsClickable(True)
         hh.setStretchLastSection(False)
         for _col in range(len(ResultModel.HEADERS)):
-            hh.setSectionResizeMode(_col, QtWidgets.QHeaderView.Interactive)
+            hh.setSectionResizeMode(_col, QtWidgets.QHeaderView.ResizeMode.Interactive)
         # default order: most sources first
-        self.table.sortByColumn(ResultModel.COL_SEEDS, QtCore.Qt.DescendingOrder)
-        self.table.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
+        self.table.sortByColumn(ResultModel.COL_SEEDS, QtCore.Qt.SortOrder.DescendingOrder)
+        self.table.setContextMenuPolicy(QtCore.Qt.ContextMenuPolicy.CustomContextMenu)
         root.addWidget(self.table, 1)
 
         self.details = QtWidgets.QPlainTextEdit()
         self.details.setReadOnly(True)
         self.details.setMaximumHeight(96)
-        self.details.setPlaceholderText("选中一行查看详情")
+        self.details.setPlaceholderText(tr("选中一行查看详情"))
         root.addWidget(self.details)
 
         self.filter_edit.textChanged.connect(self.proxy_model.set_keyword_filter)
@@ -138,7 +140,7 @@ class SearchTab(QtWidgets.QWidget):
         self.started_at = time.monotonic()
         self._phase = "index"
         self.sig_title.emit(self._label())
-        self.lbl_tab_status.setText("搜索中… (%d 个数据源)" % len(sources))
+        self.lbl_tab_status.setText(tr("搜索中… (%d 个数据源)") % len(sources))
         self.session = SearchSession(
             self.query, sources=sources,
             on_result=lambda rows: self.sig_results.emit(rows),
@@ -146,7 +148,7 @@ class SearchTab(QtWidgets.QWidget):
             on_done=lambda rows: self.sig_done.emit(""),
             enrich_seeders=True)
         self.session.start()
-        self.sig_message.emit("「%s」搜索中… (%d 个数据源)"
+        self.sig_message.emit(tr("「%s」搜索中… (%d 个数据源)")
                               % (self.query, len(sources)))
 
     def cancel(self) -> None:
@@ -165,12 +167,12 @@ class SearchTab(QtWidgets.QWidget):
 
     def stop(self) -> None:
         self.cancel()
-        self.lbl_tab_status.setText("已停止")
+        self.lbl_tab_status.setText(tr("已停止"))
         self.sig_title.emit(self._label())
-        self.sig_message.emit("已停止")
+        self.sig_message.emit(tr("已停止"))
 
     # -- slots (GUI thread) -------------------------------------------
-    @QtCore.pyqtSlot(list)
+    @QtCore.Slot(list)
     def _on_results(self, rows: list) -> None:
         """Queue incoming rows; the table is updated in bursts.
 
@@ -206,30 +208,33 @@ class SearchTab(QtWidgets.QWidget):
             # nothing new -> these are in-place 资源数 updates from the enricher
             for r in rows:
                 self.model.refresh_row(r)
-        self.lbl_tab_status.setText("%d 条 · %.0fs"
+        self.lbl_tab_status.setText(tr("%d 条 · %.0fs")
                                     % (self.model.rowCount(),
                                        time.monotonic() - self.started_at))
         self.sig_title.emit(self._label())
         if self.owner.current_tab() is self:
             self.owner._update_copy_enabled()
 
-    @QtCore.pyqtSlot(str, str)
+    @QtCore.Slot(str, str)
     def _on_status(self, sid: str, msg: str) -> None:
         from ..core.sources import REGISTRY
+        from . import i18n
+        raw_message = msg
+        msg = i18n.translate_status(msg)
         if sid == "enrich":
             # make it visible on the tab itself: a background tab that is
             # filling in 资源数 otherwise looks finished-but-empty for a minute
-            self._phase = "" if "完成" in msg else "enrich"
-            text = "补充资源数… %s" % msg
+            self._phase = "" if "完成" in raw_message else "enrich"
+            text = tr("补充资源数… %s") % msg
             self.sig_title.emit(self._label())
         else:
             s = REGISTRY.get(sid)
-            text = "%s: %s" % (s.label if s else sid, msg)
+            text = "%s: %s" % (tr(s.label) if s else sid, msg)
         self.lbl_tab_status.setText(text)
         if self.owner.current_tab() is self:
             self.sig_message.emit(text)
 
-    @QtCore.pyqtSlot(str)
+    @QtCore.Slot(str)
     def _on_done(self, _msg: str) -> None:
         """Fired once when the index phase ends and again when enrichment ends."""
         self._flush_timer.stop()
@@ -240,9 +245,11 @@ class SearchTab(QtWidgets.QWidget):
         except Exception:  # noqa: BLE001
             summary = ""
         if summary:
+            from . import i18n
+            summary = i18n.translate_status(summary)
             self.lbl_tab_status.setText(summary)
         else:
-            self.lbl_tab_status.setText("%d 条" % self.model.rowCount())
+            self.lbl_tab_status.setText(tr("%d 条") % self.model.rowCount())
         self._phase = ""
         self.sig_title.emit(self._label())
         if self.owner.current_tab() is self:
@@ -254,17 +261,17 @@ class SearchTab(QtWidgets.QWidget):
 
     # -- title ---------------------------------------------------------
     def _label(self) -> str:
-        text = self.query or "(空)"
+        text = self.query or tr("(空)")
         n = self.model.rowCount()
         if self._phase == "enrich":
-            return "%s (%d) 补资源数…" % (text, n)
+            return tr("%s (%d) 补资源数…") % (text, n)
         if self.running:
             return "%s …" % text
         if n:
             return "%s (%d)" % (text, n)
         return text
 
-    @QtCore.pyqtSlot(str)
+    @QtCore.Slot(str)
     def _apply_title(self, text: str) -> None:
         i = self.owner.tabs.indexOf(self)
         if i >= 0:
@@ -314,7 +321,7 @@ class SearchTab(QtWidgets.QWidget):
                 selection.select(self.proxy_model.index(row, 0),
                                  self.proxy_model.index(
                                      row, self.model.columnCount() - 1))
-        sm.select(selection, QtCore.QItemSelectionModel.Select)
+        sm.select(selection, QtCore.QItemSelectionModel.SelectionFlag.Select)
 
     def set_format(self, key: str) -> None:
         self.model.set_format(key)
@@ -322,18 +329,18 @@ class SearchTab(QtWidgets.QWidget):
     # -- context menu / details ---------------------------------------
     def _context_menu(self, pos) -> None:
         menu = QtWidgets.QMenu(self)
-        a1 = menu.addAction("复制选中链接")
+        a1 = menu.addAction(tr("复制选中链接"))
         a1.triggered.connect(self.owner.copy_selected)
-        a2 = menu.addAction("复制全部结果链接")
+        a2 = menu.addAction(tr("复制全部结果链接"))
         a2.triggered.connect(self.owner.copy_all)
         menu.addSeparator()
-        a3 = menu.addAction("复制名称")
+        a3 = menu.addAction(tr("复制名称"))
         a3.triggered.connect(lambda: self.owner._to_clipboard(
-            "\r\n".join(r.name for r in self.selected_results()), "名称"))
-        a4 = menu.addAction("重新获取资源数")
+            "\r\n".join(r.name for r in self.selected_results()), tr("名称")))
+        a4 = menu.addAction(tr("重新获取资源数"))
         a4.triggered.connect(self.owner.reenrich_selected)
         menu.addSeparator()
-        a5 = menu.addAction("在浏览器中打开页面")
+        a5 = menu.addAction(tr("在浏览器中打开页面"))
         a5.triggered.connect(self.open_page)
         menu.exec_(self.table.viewport().mapToGlobal(pos))
 
@@ -345,28 +352,28 @@ class SearchTab(QtWidgets.QWidget):
         r = rows[0]
         srcs = ", ".join(s for s in (r.extra.get("srcs") or [r.source]) if s)
         info = [
-            "名称: %s" % r.name,
-            "资源数: %s%s" % (r.seeds_display,
-                            "" if r.seeds_verified else "  (未确认)"),
-            "文件大小: %s%s" % (r.size_display,
-                              "  (取自文件名，仅供参考)"
+            tr("名称: %s") % r.name,
+            tr("资源数: %s%s") % (r.seeds_display,
+                            "" if r.seeds_verified else tr("  (未确认)")),
+            tr("文件大小: %s%s") % (r.size_display,
+                              tr("  (取自文件名，仅供参考)")
                               if r.extra.get("size_from_name") else ""),
-            "文件类型: %s" % r.type_display,
-            "来源: %s" % srcs,
+            tr("文件类型: %s") % tr(r.type_display),
+            tr("来源: %s") % srcs,
         ]
         if r.peers:
-            info.append("下载中(leechers): %d" % r.peers)
+            info.append(tr("下载中(leechers): %d") % r.peers)
         if r.infohash:
             info.append("infohash: %s" % r.infohash)
         if r.ed2k_hash:
             info.append("ed2k hash: %s" % r.ed2k_hash.upper())
         info.append("")
-        info.append("原始: %s" % r.link)
+        info.append(tr("原始: %s") % r.link)
         for label, key in LINK_FORMATS[1:]:
             conv = {"magnet": link_to_magnet, "ed2k": link_to_ed2k}.get(key)
             val = link_to_thunder(r.link) if key == "thunder" else (
                 conv(r.link, r.name, r.size) if conv else "")
-            info.append("%s: %s" % (label, val or "（无法转换）"))
+            info.append("%s: %s" % (label, val or tr("（无法转换）")))
         self.details.setPlainText("\n".join(info))
 
     def open_page(self) -> None:
@@ -375,14 +382,14 @@ class SearchTab(QtWidgets.QWidget):
             return
         raw = str(rows[0].extra.get("page") or "")
         if not raw:
-            self.sig_message.emit("该结果没有可打开的页面")
+            self.sig_message.emit(tr("该结果没有可打开的页面"))
             return
         # never hand a keyword-bearing URL to the browser: the query string is
         # stripped, and a URL whose *path* contains the search term is refused
         page = safe_page_url(raw, self.query)
         if not page:
             self.sig_message.emit(
-                "该结果只有带关键词的搜索页，不打开（避免关键词进入浏览器历史）")
+                tr("该结果只有带关键词的搜索页，不打开（避免关键词进入浏览器历史）"))
             return
         QtGui.QDesktopServices.openUrl(QtCore.QUrl(page))
 
@@ -401,7 +408,7 @@ class SearchTab(QtWidgets.QWidget):
                 self.sig_done.emit("")
 
         threading.Thread(target=work, daemon=True).start()
-        self.lbl_tab_status.setText("正在重新获取资源数 (%d)…" % len(rows))
+        self.lbl_tab_status.setText(tr("正在重新获取资源数 (%d)…") % len(rows))
 
     # -- column layout -------------------------------------------------
     #: 默认列宽按可用宽度配比（名称 资源数 大小 类型 链接）
@@ -469,7 +476,7 @@ class SearchTab(QtWidgets.QWidget):
             visual = hh.visualIndex(logical)
             if visual != logical:
                 hh.moveSection(visual, logical)
-        self.table.sortByColumn(ResultModel.COL_SEEDS, QtCore.Qt.DescendingOrder)
+        self.table.sortByColumn(ResultModel.COL_SEEDS, QtCore.Qt.SortOrder.DescendingOrder)
         self.fit_columns()
         self.owner.save_table_layout()
-        self.sig_message.emit("列布局已重置为默认（名称/资源数/大小/类型/链接/来源）")
+        self.sig_message.emit(tr("列布局已重置为默认（名称/资源数/大小/类型/链接/来源）"))
